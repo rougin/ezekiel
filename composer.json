@@ -1,41 +1,38 @@
 {
-    "name": "rougin/windstorm",
-    "description": "A chainable, expressive, and interoperable SQL query builder.",
-    "homepage": "https://roug.in/windstorm/",
-    "license": "MIT",
-    "authors":
-    [
-        {
-            "name": "Rougin Gutib",
-            "email": "rougingutib@gmail.com",
-            "homepage": "https://roug.in/",
-            "role": "Software Engineer"
-        }
-    ],
-    "require":
+  "name": "rougin/ezekiel",
+  "description": "An expressive SQL query builder in PHP.",
+  "homepage": "https://roug.in/ezekiel/",
+  "license": "MIT",
+  "authors":
+  [
     {
-        "php": ">=5.3.0",
-        "doctrine/dbal": "~2.5"
-    },
-    "require-dev":
-    {
-        "doctrine/orm": "~2.4",
-        "illuminate/database": ">=4.1",
-        "phpunit/phpunit": "~4.2|~5.7",
-        "scrutinizer/ocular": "~1.1"
-    },
-    "autoload":
-    {
-        "psr-4":
-        {
-            "Rougin\\Windstorm\\": "src"
-        }
-    },
-    "autoload-dev":
-    {
-        "psr-4":
-        {
-            "Rougin\\Windstorm\\": "tests"
-        }
+      "name": "Rougin Gutib",
+      "email": "rougingutib@gmail.com",
+      "homepage": "https://roug.in/",
+      "role": "Software Engineer"
     }
+  ],
+  "require":
+  {
+    "php": ">=5.3.0"
+  },
+  "require-dev":
+  {
+    "phpunit/phpunit": "~4.2|~5.7|~6.0|~7.0|~8.0|~9.0",
+    "sanmai/phpunit-legacy-adapter": "~6.1|~8.0"
+  },
+  "autoload":
+  {
+    "psr-4":
+    {
+      "Rougin\\Ezekiel\\": "src"
+    }
+  },
+  "autoload-dev":
+  {
+    "psr-4":
+    {
+      "Rougin\\Ezekiel\\": "tests"
+    }
+  }
 }

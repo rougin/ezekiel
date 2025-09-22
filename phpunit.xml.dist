@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<phpunit bootstrap="vendor/autoload.php" colors="true" stderr="true" verbose="true">
+<phpunit bootstrap="vendor/autoload.php" colors="true">
   <testsuites>
-    <testsuite name="Windstorm Test Suite">
+    <testsuite name="Ezekiel Test Suite">
       <directory>tests</directory>
     </testsuite>
   </testsuites>
