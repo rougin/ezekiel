@@ -16,14 +16,14 @@ class WhereTest extends Testcase
     {
         $query = new Query;
 
-        $expected = 'SELECT * FROM "users" WHERE "id" = ?';
+        $sql = 'SELECT * FROM users WHERE id = ?';
 
-        $query->select('*')->from('users');
-        $query->where('id')->equals(1);
+        $query->select('*')->from('users')
+            ->where('id')->equals(1);
 
         $actual = $query->toSql();
 
-        $this->assertEquals($expected, $actual);
+        $this->assertEquals($sql, $actual);
     }
 
     /**
@@ -33,14 +33,14 @@ class WhereTest extends Testcase
     {
         $query = new Query;
 
-        $expected = 'SELECT * FROM "users" WHERE "id" > ?';
+        $sql = 'SELECT * FROM users WHERE id > ?';
 
-        $query->select('*')->from('users');
-        $query->where('id')->greaterThan(1);
+        $query->select('*')->from('users')
+            ->where('id')->greaterThan(1);
 
         $actual = $query->toSql();
 
-        $this->assertEquals($expected, $actual);
+        $this->assertEquals($sql, $actual);
     }
 
     /**
@@ -50,14 +50,14 @@ class WhereTest extends Testcase
     {
         $query = new Query;
 
-        $expected = 'SELECT * FROM "users" WHERE "id" >= ?';
+        $sql = 'SELECT * FROM users WHERE id >= ?';
 
-        $query->select('*')->from('users');
-        $query->where('id')->greaterThanOrEqualTo(1);
+        $query->select('*')->from('users')
+            ->where('id')->greaterThanOrEqualTo(1);
 
         $actual = $query->toSql();
 
-        $this->assertEquals($expected, $actual);
+        $this->assertEquals($sql, $actual);
     }
 
     /**
@@ -67,14 +67,14 @@ class WhereTest extends Testcase
     {
         $query = new Query;
 
-        $expected = 'SELECT * FROM "users" WHERE "id" IN (?, ?, ?)';
+        $sql = 'SELECT * FROM users WHERE id IN (?, ?, ?)';
 
-        $query->select('*')->from('users');
-        $query->where('id')->in(array(1, 2, 3));
+        $query->select('*')->from('users')
+            ->where('id')->in(array(1, 2, 3));
 
         $actual = $query->toSql();
 
-        $this->assertEquals($expected, $actual);
+        $this->assertEquals($sql, $actual);
     }
 
     /**
@@ -84,14 +84,14 @@ class WhereTest extends Testcase
     {
         $query = new Query;
 
-        $expected = 'SELECT * FROM "users" WHERE "active" = ?';
+        $sql = 'SELECT * FROM users WHERE active = ?';
 
-        $query->select('*')->from('users');
-        $query->where('active')->isFalse();
+        $query->select('*')->from('users')
+            ->where('active')->isFalse();
 
         $actual = $query->toSql();
 
-        $this->assertEquals($expected, $actual);
+        $this->assertEquals($sql, $actual);
     }
 
     /**
@@ -101,14 +101,14 @@ class WhereTest extends Testcase
     {
         $query = new Query;
 
-        $expected = 'SELECT * FROM "users" WHERE "name" IS NOT NULL';
+        $sql = 'SELECT * FROM users WHERE name IS NOT NULL';
 
-        $query->select('*')->from('users');
-        $query->where('name')->isNotNull();
+        $query->select('*')->from('users')
+            ->where('name')->isNotNull();
 
         $actual = $query->toSql();
 
-        $this->assertEquals($expected, $actual);
+        $this->assertEquals($sql, $actual);
     }
 
     /**
@@ -118,14 +118,14 @@ class WhereTest extends Testcase
     {
         $query = new Query;
 
-        $expected = 'SELECT * FROM "users" WHERE "name" IS NULL';
+        $sql = 'SELECT * FROM users WHERE name IS NULL';
 
-        $query->select('*')->from('users');
-        $query->where('name')->isNull();
+        $query->select('*')->from('users')
+            ->where('name')->isNull();
 
         $actual = $query->toSql();
 
-        $this->assertEquals($expected, $actual);
+        $this->assertEquals($sql, $actual);
     }
 
     /**
@@ -135,14 +135,14 @@ class WhereTest extends Testcase
     {
         $query = new Query;
 
-        $expected = 'SELECT * FROM "users" WHERE "active" = ?';
+        $sql = 'SELECT * FROM users WHERE active = ?';
 
-        $query->select('*')->from('users');
-        $query->where('active')->isTrue();
+        $query->select('*')->from('users')
+            ->where('active')->isTrue();
 
         $actual = $query->toSql();
 
-        $this->assertEquals($expected, $actual);
+        $this->assertEquals($sql, $actual);
     }
 
     /**
@@ -152,14 +152,14 @@ class WhereTest extends Testcase
     {
         $query = new Query;
 
-        $expected = 'SELECT * FROM "users" WHERE "id" < ?';
+        $sql = 'SELECT * FROM users WHERE id < ?';
 
-        $query->select('*')->from('users');
-        $query->where('id')->lessThan(1);
+        $query->select('*')->from('users')
+            ->where('id')->lessThan(1);
 
         $actual = $query->toSql();
 
-        $this->assertEquals($expected, $actual);
+        $this->assertEquals($sql, $actual);
     }
 
     /**
@@ -169,14 +169,14 @@ class WhereTest extends Testcase
     {
         $query = new Query;
 
-        $expected = 'SELECT * FROM "users" WHERE "id" <= ?';
+        $sql = 'SELECT * FROM users WHERE id <= ?';
 
-        $query->select('*')->from('users');
-        $query->where('id')->lessThanOrEqualTo(1);
+        $query->select('*')->from('users')
+            ->where('id')->lessThanOrEqualTo(1);
 
         $actual = $query->toSql();
 
-        $this->assertEquals($expected, $actual);
+        $this->assertEquals($sql, $actual);
     }
 
     /**
@@ -186,14 +186,14 @@ class WhereTest extends Testcase
     {
         $query = new Query;
 
-        $expected = 'SELECT * FROM "users" WHERE "name" LIKE ?';
+        $sql = 'SELECT * FROM users WHERE name LIKE ?';
 
-        $query->select('*')->from('users');
-        $query->where('name')->like('%Ezekiel%');
+        $query->select('*')->from('users')
+            ->where('name')->like('%Ezekiel%');
 
         $actual = $query->toSql();
 
-        $this->assertEquals($expected, $actual);
+        $this->assertEquals($sql, $actual);
     }
 
     /**
@@ -203,14 +203,14 @@ class WhereTest extends Testcase
     {
         $query = new Query;
 
-        $expected = 'SELECT * FROM "users" WHERE "id" != ?';
+        $sql = 'SELECT * FROM users WHERE id != ?';
 
-        $query->select('*')->from('users');
-        $query->where('id')->notEqualTo(1);
+        $query->select('*')->from('users')
+            ->where('id')->notEqualTo(1);
 
         $actual = $query->toSql();
 
-        $this->assertEquals($expected, $actual);
+        $this->assertEquals($sql, $actual);
     }
 
     /**
@@ -220,14 +220,14 @@ class WhereTest extends Testcase
     {
         $query = new Query;
 
-        $expected = 'SELECT * FROM "users" WHERE "id" NOT IN (?, ?, ?)';
+        $sql = 'SELECT * FROM users WHERE id NOT IN (?, ?, ?)';
 
-        $query->select('*')->from('users');
-        $query->where('id')->notIn(array(1, 2, 3));
+        $query->select('*')->from('users')
+            ->where('id')->notIn(array(1, 2, 3));
 
         $actual = $query->toSql();
 
-        $this->assertEquals($expected, $actual);
+        $this->assertEquals($sql, $actual);
     }
 
     /**
@@ -237,14 +237,14 @@ class WhereTest extends Testcase
     {
         $query = new Query;
 
-        $expected = 'SELECT * FROM "users" WHERE "name" NOT LIKE ?';
+        $sql = 'SELECT * FROM users WHERE name NOT LIKE ?';
 
-        $query->select('*')->from('users');
-        $query->where('name')->notLike('%Ezekiel%');
+        $query->select('*')->from('users')
+            ->where('name')->notLike('%Ezekiel%');
 
         $actual = $query->toSql();
 
-        $this->assertEquals($expected, $actual);
+        $this->assertEquals($sql, $actual);
     }
 
     /**
@@ -254,15 +254,15 @@ class WhereTest extends Testcase
     {
         $query = new Query;
 
-        $expected = 'SELECT * FROM "users" WHERE "name" = ? AND "age" > ? OR "status" = ?';
+        $sql = 'SELECT * FROM users WHERE name = ? AND age > ? OR status = ?';
 
-        $query->select('*')->from('users');
-        $query->where('name')->equals('%Ezekiel%');
-        $query->andWhere('age')->greaterThan(5);
-        $query->orWhere('status')->equals(1);
+        $query->select('*')->from('users')
+            ->where('name')->equals('%Ezekiel%')
+            ->andWhere('age')->greaterThan(5)
+            ->orWhere('status')->equals(1);
 
         $actual = $query->toSql();
 
-        $this->assertEquals($expected, $actual);
+        $this->assertEquals($sql, $actual);
     }
 }

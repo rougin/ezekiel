@@ -15,7 +15,7 @@ interface QueryInterface
     public function getType();
 
     /**
-     * @return mixed[]
+     * @return array<string, mixed>
      */
     public function getValues();
 

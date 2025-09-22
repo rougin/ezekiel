@@ -14,9 +14,9 @@ class Compare implements QueryInterface
     const GROUP_OR = 1;
 
     /**
-     * @var integer|null
+     * @var integer
      */
-    protected $group = null;
+    protected $group;
 
     /**
      * @var string
@@ -46,12 +46,15 @@ class Compare implements QueryInterface
     /**
      * @param \Rougin\Ezekiel\Query $query
      * @param string                $key
+     * @param integer               $group
      */
-    public function __construct(Query $query, $key)
+    public function __construct(Query $query, $key, $group = self::GROUP_AND)
     {
         $this->query = $query;
 
         $this->key = $key;
+
+        $this->group = $group;
     }
 
     /**
@@ -79,7 +82,7 @@ class Compare implements QueryInterface
     }
 
     /**
-     * @return mixed[]
+     * @return array<string, mixed>
      */
     public function getValues()
     {
@@ -291,26 +294,6 @@ class Compare implements QueryInterface
     }
 
     /**
-     * @return self
-     */
-    public function useAnd()
-    {
-        $this->group = self::GROUP_AND;
-
-        return $this;
-    }
-
-    /**
-     * @return self
-     */
-    public function useOr()
-    {
-        $this->group = self::GROUP_OR;
-
-        return $this;
-    }
-
-    /**
      * @param string $key
      * @param string $symbol
      * @param string $value
@@ -331,6 +314,6 @@ class Compare implements QueryInterface
             $group = 'OR ';
         }
 
-        return $group . '"' . $key . '" ' . $symbol . ' ' . $value;
+        return $group . $key . ' ' . $symbol . ' ' . $value;
     }
 }
