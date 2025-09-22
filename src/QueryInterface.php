@@ -15,11 +15,6 @@ interface QueryInterface
     public function getType();
 
     /**
-     * @return array<string, mixed>
-     */
-    // public function getValues();
-
-    /**
      * @return string
      */
     public function toSql();

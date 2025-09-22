@@ -9,9 +9,11 @@ namespace Rougin\Ezekiel;
  */
 class Compare implements QueryInterface
 {
-    const GROUP_AND = 0;
+    const GROUP_AND = 1;
 
-    const GROUP_OR = 1;
+    const GROUP_NONE = 0;
+
+    const GROUP_OR = 2;
 
     /**
      * @var integer
@@ -39,16 +41,16 @@ class Compare implements QueryInterface
     protected $type;
 
     /**
-     * @var mixed[]
+     * @var array<string, mixed>
      */
-    protected $values;
+    protected $values = array();
 
     /**
      * @param \Rougin\Ezekiel\Query $query
      * @param string                $key
      * @param integer               $group
      */
-    public function __construct(Query $query, $key, $group = self::GROUP_AND)
+    public function __construct(Query $query, $key, $group = self::GROUP_NONE)
     {
         $this->query = $query;
 
@@ -68,7 +70,7 @@ class Compare implements QueryInterface
     {
         $this->sql = $this->setSql($this->key, '=');
 
-        $this->values = array($value);
+        $this->values[$this->key] = $value;
 
         return $this->query->addItem($this);
     }
@@ -100,7 +102,7 @@ class Compare implements QueryInterface
     {
         $this->sql = $this->setSql($this->key, '>');
 
-        $this->values = array($value);
+        $this->values[$this->key] = $value;
 
         return $this->query->addItem($this);
     }
@@ -116,7 +118,7 @@ class Compare implements QueryInterface
     {
         $this->sql = $this->setSql($this->key, '>=');
 
-        $this->values = array($value);
+        $this->values[$this->key] = $value;
 
         return $this->query->addItem($this);
     }
@@ -136,7 +138,7 @@ class Compare implements QueryInterface
 
         $this->sql = $this->setSql($this->key, 'IN', $value);
 
-        $this->values = $values;
+        $this->values[$this->key] = $values;
 
         return $this->query->addItem($this);
     }
@@ -148,7 +150,11 @@ class Compare implements QueryInterface
      */
     public function isFalse()
     {
-        return $this->equals('FALSE');
+        $this->sql = $this->setSql($this->key, '=');
+
+        $this->values[$this->key] = false;
+
+        return $this->query->addItem($this);
     }
 
     /**
@@ -182,7 +188,11 @@ class Compare implements QueryInterface
      */
     public function isTrue()
     {
-        return $this->equals('TRUE');
+        $this->sql = $this->setSql($this->key, '=');
+
+        $this->values[$this->key] = true;
+
+        return $this->query->addItem($this);
     }
 
     /**
@@ -196,7 +206,7 @@ class Compare implements QueryInterface
     {
         $this->sql = $this->setSql($this->key, '<');
 
-        $this->values = array($value);
+        $this->values[$this->key] = $value;
 
         return $this->query->addItem($this);
     }
@@ -212,7 +222,7 @@ class Compare implements QueryInterface
     {
         $this->sql = $this->setSql($this->key, '<=');
 
-        $this->values = array($value);
+        $this->values[$this->key] = $value;
 
         return $this->query->addItem($this);
     }
@@ -228,7 +238,7 @@ class Compare implements QueryInterface
     {
         $this->sql = $this->setSql($this->key, 'LIKE');
 
-        $this->values = array($value);
+        $this->values[$this->key] = $value;
 
         return $this->query->addItem($this);
     }
@@ -244,7 +254,7 @@ class Compare implements QueryInterface
     {
         $this->sql = $this->setSql($this->key, '!=');
 
-        $this->values = array($value);
+        $this->values[$this->key] = $value;
 
         return $this->query->addItem($this);
     }
@@ -264,7 +274,7 @@ class Compare implements QueryInterface
 
         $this->sql = $this->setSql($this->key, 'NOT IN', $value);
 
-        $this->values = $values;
+        $this->values[$this->key] = $values;
 
         return $this->query->addItem($this);
     }
@@ -280,7 +290,7 @@ class Compare implements QueryInterface
     {
         $this->sql = $this->setSql($this->key, 'NOT LIKE');
 
-        $this->values = array($value);
+        $this->values[$this->key] = $value;
 
         return $this->query->addItem($this);
     }
@@ -314,6 +324,8 @@ class Compare implements QueryInterface
             $group = 'OR ';
         }
 
-        return $group . $key . ' ' . $symbol . ' ' . $value;
+        $sql = 'WHERE ' . $group . $key . ' ';
+
+        return $sql . $symbol . ' ' . $value;
     }
 }

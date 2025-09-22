@@ -298,16 +298,16 @@ class Query
      */
     public function toSql()
     {
-        $sql = $this->setSelect();
+        $sql = $this->setSelectSql();
 
         if ($this->type === self::TYPE_INSERT)
         {
-            $sql = $this->setInsert();
+            $sql = $this->setInsertSql();
         }
 
-        $sql = $this->setWhere($sql);
+        $sql = $this->setWhereSql($sql);
 
-        $sql = $this->setOrder($sql);
+        $sql = $this->setOrderSql($sql);
 
         return $sql;
     }
@@ -340,7 +340,7 @@ class Query
     /**
      * @return string
      */
-    protected function setInsert()
+    protected function setInsertSql()
     {
         foreach ($this->items as $item)
         {
@@ -360,9 +360,9 @@ class Query
      *
      * @return string
      */
-    protected function setOrder($sql)
+    protected function setOrderSql($sql)
     {
-        $first = false;
+        $first = true;
 
         $items = array();
 
@@ -375,14 +375,14 @@ class Query
 
             $temp = $item->toSql();
 
-            if ($first)
+            if (! $first)
             {
                 $temp = str_replace('ORDER BY', '', $temp);
             }
 
             $items[] = trim($temp);
 
-            $first = true;
+            $first = false;
         }
 
         return trim($sql . ' ' . implode(', ', $items));
@@ -391,7 +391,7 @@ class Query
     /**
      * @return string
      */
-    protected function setSelect()
+    protected function setSelectSql()
     {
         foreach ($this->items as $item)
         {
@@ -411,9 +411,11 @@ class Query
      *
      * @return string
      */
-    protected function setWhere($sql)
+    protected function setWhereSql($sql)
     {
-        $first = false;
+        $first = true;
+
+        $items = array();
 
         foreach ($this->items as $item)
         {
@@ -422,18 +424,25 @@ class Query
                 continue;
             }
 
-            if (! $first)
+            if ($item instanceof Where)
             {
-                $sql .= ' WHERE';
+                $values = $item->getValues();
 
-                $first = true;
+                $this->binds = array_merge($this->binds, $values);
             }
 
-            $sql .= ' ' . $item->toSql();
+            $temp = $item->toSql();
+
+            if (! $first)
+            {
+                $temp = str_replace('WHERE ', '', $temp);
+            }
+
+            $items[] = trim($temp);
+
+            $first = false;
         }
 
-        $sql = str_replace('WHERE AND', 'WHERE', $sql);
-
-        return str_replace('WHERE OR', 'WHERE', $sql);
+        return trim($sql . ' ' . implode(' ', $items));
     }
 }
