@@ -21,6 +21,8 @@ class Query
 
     const TYPE_HAVING = 5;
 
+    const TYPE_ORDER = 6;
+
     /**
      * @var array<string, mixed>
      */
@@ -75,11 +77,13 @@ class Query
      *
      * @param string $key
      *
-     * @return self
+     * @return \Rougin\Ezekiel\Order
      */
     public function andOrderBy($key)
     {
-        return $this;
+        $this->type = self::TYPE_ORDER;
+
+        return new Order($this, $key);
     }
 
     /**
@@ -249,11 +253,13 @@ class Query
      *
      * @param string $key
      *
-     * @return self
+     * @return \Rougin\Ezekiel\Order
      */
     public function orderBy($key)
     {
-        return $this;
+        $this->type = self::TYPE_ORDER;
+
+        return new Order($this, $key);
     }
 
     /**
@@ -301,6 +307,8 @@ class Query
 
         $sql = $this->setWhere($sql);
 
+        $sql = $this->setOrder($sql);
+
         return $sql;
     }
 
@@ -336,17 +344,48 @@ class Query
     {
         foreach ($this->items as $item)
         {
-            if ($this->type !== self::TYPE_INSERT)
+            if ($item instanceof Insert)
             {
-                continue;
+                $this->binds = $item->getValues();
             }
-
-            $this->binds = $item->getValues();
 
             return $item->toSql();
         }
 
         return '';
+    }
+
+    /**
+     * @param string $sql
+     *
+     * @return string
+     */
+    protected function setOrder($sql)
+    {
+        $first = false;
+
+        $items = array();
+
+        foreach ($this->items as $item)
+        {
+            if ($item->getType() !== self::TYPE_ORDER)
+            {
+                continue;
+            }
+
+            $temp = $item->toSql();
+
+            if ($first)
+            {
+                $temp = str_replace('ORDER BY', '', $temp);
+            }
+
+            $items[] = trim($temp);
+
+            $first = true;
+        }
+
+        return trim($sql . ' ' . implode(', ', $items));
     }
 
     /**
@@ -356,7 +395,7 @@ class Query
     {
         foreach ($this->items as $item)
         {
-            if ($this->type !== self::TYPE_SELECT)
+            if ($item->getType() !== self::TYPE_SELECT)
             {
                 continue;
             }
@@ -374,7 +413,7 @@ class Query
      */
     protected function setWhere($sql)
     {
-        $where = false;
+        $first = false;
 
         foreach ($this->items as $item)
         {
@@ -383,11 +422,11 @@ class Query
                 continue;
             }
 
-            if (! $where)
+            if (! $first)
             {
                 $sql .= ' WHERE';
 
-                $where = true;
+                $first = true;
             }
 
             $sql .= ' ' . $item->toSql();
