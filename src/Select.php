@@ -66,14 +66,6 @@ class Select implements QueryInterface
     }
 
     /**
-     * @return array<string, mixed>
-     */
-    public function getValues()
-    {
-        return array();
-    }
-
-    /**
      * @return string
      */
     public function toSql()

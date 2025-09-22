@@ -17,7 +17,7 @@ interface QueryInterface
     /**
      * @return array<string, mixed>
      */
-    public function getValues();
+    // public function getValues();
 
     /**
      * @return string
