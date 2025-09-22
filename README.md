@@ -84,7 +84,7 @@ echo json_encode($result->asItems());
 
 ## Renaming from `Windstorm`
 
-As being renamed from `Windstorm`, this will introduce [backward compatibility](https://en.wikipedia.org/wiki/Backward_compatibility) (BC) breaks through out the source code. This was done to increase extensibility, simplicity and maintainbility. This was discussed in one of [my blog post](https://roug.in/hello-world-again/) which aims to solve overengineering my open source packages:
+As being renamed from `Windstorm`, this will introduce [backward compatibility](https://en.wikipedia.org/wiki/Backward_compatibility) (BC) breaks through out the source code. This was done to increase extensibility, simplicity and maintainbility and was discussed in one of [my blog post](https://roug.in/hello-world-again/) which aims to solve overengineering of my own open source packages:
 
 > I also want to extend this plan to my personal packages as well like [Staticka](https://github.com/staticka/staticka) and [Transcribe](https://github.com/rougin/transcribe). With this, I will introduce backward compatibility breaks to them initially as it is hard to migrate their codebase due to minimal to no documentation being provided in its basic usage and its internals. As I checked their code, I realized that they are also over engineered, which is a mistake that I needed to atone for when updating my packages in the future.
 
