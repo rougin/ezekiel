@@ -36,7 +36,7 @@ $sql = $query->toSql();
 // ------------------------------------
 
 // array(':u_name' => '%winds%') ---
-$bindings = $query->bindings();
+$binds = $query->getBinds();
 // ---------------------------------
 ```
 
@@ -119,7 +119,7 @@ $ php-cs-fixer fix --config=phpstyle.php
 Execute unit tests using [phpunit](https://phpunit.de/index.html):
 
 ``` bash
-$ composer test
+$ vendor/bin/phpunit
 ```
 
 ## Credits
