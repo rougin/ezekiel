@@ -114,12 +114,15 @@ class Query
      * Generates a "DELETE FROM" query.
      *
      * @param string      $table
-     * @param string|null $alias
      *
      * @return self
      */
-    public function deleteFrom($table, $alias = null)
+    public function deleteFrom($table)
     {
+        $this->table = $table;
+
+        $this->type = self::TYPE_DELETE;
+
         return $this;
     }
 
@@ -326,6 +329,10 @@ class Query
             $sql = $this->setInsertSql();
         }
 
+        if ($this->type === self::TYPE_DELETE)
+        {
+            $sql = 'DELETE FROM ' . $this->table;
+        }
         $sql = $this->setCompareSql($sql, self::TYPE_WHERE);
 
         if ($this->type === self::TYPE_GROUP)
@@ -435,6 +442,8 @@ class Query
      */
     protected function setInsertSql()
     {
+        $sql = '';
+
         foreach ($this->items as $item)
         {
             if ($item instanceof Insert)
@@ -442,10 +451,10 @@ class Query
                 $this->binds = $item->getValues();
             }
 
-            return $item->toSql();
+            $sql = $item->toSql();
         }
 
-        return '';
+        return $sql;
     }
 
     /**
@@ -486,6 +495,8 @@ class Query
      */
     protected function setSelectSql()
     {
+        $sql = '';
+
         foreach ($this->items as $item)
         {
             if ($item->getType() !== self::TYPE_SELECT)
@@ -498,9 +509,10 @@ class Query
                 $item->withAlias($this->alias);
             }
 
-            return $item->toSql();
+            $sql = $item->toSql();
         }
 
-        return '';
+        return $sql;
+    }
     }
 }

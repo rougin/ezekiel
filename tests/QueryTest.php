@@ -34,22 +34,50 @@ class QueryTest extends Testcase
     /**
      * @return void
      */
-    public function test_with_group_by()
+    public function test_with_delete()
     {
         // Set expected SQL query and its attached data ---
-        $sql = 'SELECT * FROM users GROUP BY name, age';
+        $sql = 'DELETE FROM users WHERE name = ?';
+
+        $data = array('name' => 'Royce');
         // ------------------------------------------------
 
         // Check if the actual SQL query matched ---
         $query = new Query;
 
-        $query->select('*')->from('users')
-            ->groupBy(array('name', 'age'));
+        $query->deleteFrom('users')
+            ->where('name')->equals('Royce');
 
         $actual = $query->toSql();
 
         $this->assertEquals($sql, $actual);
         // -----------------------------------------
+
+        // Check if the actual bindings matched ---
+        $actual = $query->getBinds();
+
+        $this->assertEquals($data, $actual);
+        // ----------------------------------------
+    }
+
+    /**
+     * @return void
+     */
+    public function test_with_group_by()
+    {
+        // Set expected SQL query and its attached data ---
+        $sql = 'SELECT * FROM users GROUP BY name';
+        // ------------------------------------------------
+
+        // Check if the actual SQL query matched -----------
+        $query = new Query;
+
+        $query->select('*')->from('users')->groupBy('name');
+
+        $actual = $query->toSql();
+
+        $this->assertEquals($sql, $actual);
+        // -------------------------------------------------
     }
 
     /**
