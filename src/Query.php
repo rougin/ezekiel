@@ -19,9 +19,11 @@ class Query
 
     const TYPE_WHERE = 4;
 
-    const TYPE_HAVING = 5;
+    const TYPE_ORDER = 5;
 
-    const TYPE_ORDER = 6;
+    const TYPE_GROUP = 6;
+
+    const TYPE_HAVING = 7;
 
     /**
      * @var array<string, mixed>
@@ -32,6 +34,11 @@ class Query
      * @var string[]
      */
     protected $fields = array();
+
+    /**
+     * @var string[]
+     */
+    protected $groups = array();
 
     /**
      * @var \Rougin\Ezekiel\QueryInterface[]
@@ -150,6 +157,15 @@ class Query
      */
     public function groupBy($fields)
     {
+        $this->type = self::TYPE_GROUP;
+
+        if (is_string($fields))
+        {
+            $fields = array($fields);
+        }
+
+        $this->groups = $fields;
+
         return $this;
     }
 
@@ -162,7 +178,7 @@ class Query
      */
     public function having($key)
     {
-        return new Having($this, $key, Having::GROUP_AND);
+        return new Having($this, $key);
     }
 
     /**
@@ -305,7 +321,14 @@ class Query
             $sql = $this->setInsertSql();
         }
 
-        $sql = $this->setWhereSql($sql);
+        $sql = $this->setCompareSql($sql, self::TYPE_WHERE);
+
+        if ($this->type === self::TYPE_GROUP)
+        {
+            $sql .= ' GROUP BY ' . implode(', ', $this->groups);
+        }
+
+        $sql = $this->setCompareSql($sql, self::TYPE_HAVING);
 
         $sql = $this->setOrderSql($sql);
 
@@ -408,23 +431,34 @@ class Query
 
     /**
      * @param string $sql
+     * @param integer $type
      *
      * @return string
      */
-    protected function setWhereSql($sql)
+    protected function setCompareSql($sql, $type)
     {
+        $isHaving = $type === self::TYPE_HAVING;
+
+        $isWhere = $type === self::TYPE_WHERE;
+
         $first = true;
 
         $items = array();
 
         foreach ($this->items as $item)
         {
-            if ($item->getType() !== self::TYPE_WHERE)
+            // Skip items if not "HAVING" or "WHERE" --------------------------
+            $isTypeHaving = $item->getType() === self::TYPE_HAVING;
+
+            $isTypeWhere = $item->getType() === self::TYPE_WHERE;
+
+            if (($isHaving && ! $isTypeHaving) || ($isWhere && ! $isTypeWhere))
             {
                 continue;
             }
+            // ----------------------------------------------------------------
 
-            if ($item instanceof Where)
+            if ($item instanceof Compare)
             {
                 $values = $item->getValues();
 
@@ -433,9 +467,11 @@ class Query
 
             $temp = $item->toSql();
 
+            $text = $isHaving ? 'HAVING' : 'WHERE';
+
             if (! $first)
             {
-                $temp = str_replace('WHERE ', '', $temp);
+                $temp = str_replace($text . ' ', '', $temp);
             }
 
             $items[] = trim($temp);

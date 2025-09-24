@@ -324,7 +324,14 @@ class Compare implements QueryInterface
             $group = 'OR ';
         }
 
-        $sql = 'WHERE ' . $group . $key . ' ';
+        $type = 'WHERE';
+
+        if ($this->type === Query::TYPE_HAVING)
+        {
+            $type = 'HAVING';
+        }
+
+        $sql = $type . ' ' . $group . $key . ' ';
 
         return $sql . $symbol . ' ' . $value;
     }
