@@ -51,6 +51,16 @@ class Query
     protected $items = array();
 
     /**
+     * @var integer
+     */
+    protected $limit = 0;
+
+    /**
+     * @var integer
+     */
+    protected $offset = 0;
+
+    /**
      * @var string
      */
     protected $table;
@@ -59,6 +69,11 @@ class Query
      * @var integer
      */
     protected $type;
+
+    /**
+     * @var \Rougin\Ezekiel\Update
+     */
+    protected $update;
 
     /**
      * @param \Rougin\Ezekiel\QueryInterface $query
@@ -113,7 +128,7 @@ class Query
     /**
      * Generates a "DELETE FROM" query.
      *
-     * @param string      $table
+     * @param string $table
      *
      * @return self
      */
@@ -144,16 +159,6 @@ class Query
     public function getTable()
     {
         return $this->table;
-    }
-
-    /**
-     * Returns the type of the query.
-     *
-     * @return integer
-     */
-    public function getType()
-    {
-        return $this->type;
     }
 
     /**
@@ -238,13 +243,17 @@ class Query
     /**
      * Performs a "LIMIT" query.
      *
-     * @param integer      $limit
-     * @param integer|null $offset
+     * @param integer $limit
+     * @param integer $offset
      *
      * @return self
      */
-    public function limit($limit, $offset = null)
+    public function limit($limit, $offset = 0)
     {
+        $this->limit = $limit;
+
+        $this->offset = $offset;
+
         return $this;
     }
 
@@ -316,6 +325,19 @@ class Query
     }
 
     /**
+     * @param string $key
+     * @param mixed  $value
+     *
+     * @return self
+     */
+    public function set($key, $value)
+    {
+        $this->update->set($key, $value);
+
+        return $this;
+    }
+
+    /**
      * Returns the safe and compiled SQL.
      *
      * @return string
@@ -333,7 +355,20 @@ class Query
         {
             $sql = 'DELETE FROM ' . $this->table;
         }
+
+        if ($this->type === self::TYPE_UPDATE)
+        {
+            $sql = $this->update->toSql();
+
+            $this->binds = $this->update->getValues();
+        }
+
         $sql = $this->setCompareSql($sql, self::TYPE_WHERE);
+
+        if ($this->limit > 0)
+        {
+            $sql .= ' LIMIT ' . $this->limit . ', ' . $this->offset;
+        }
 
         if ($this->type === self::TYPE_GROUP)
         {
@@ -350,13 +385,18 @@ class Query
     /**
      * Generates an "UPDATE" query.
      *
-     * @param string      $table
-     * @param string|null $alias
+     * @param string $table
      *
      * @return self
      */
-    public function update($table, $alias = null)
+    public function update($table)
     {
+        $this->type = self::TYPE_UPDATE;
+
+        $this->table = $table;
+
+        $this->update = new Update($this);
+
         return $this;
     }
 
@@ -385,7 +425,7 @@ class Query
     }
 
     /**
-     * @param string $sql
+     * @param string  $sql
      * @param integer $type
      *
      * @return string
@@ -504,7 +544,7 @@ class Query
                 continue;
             }
 
-            if ($item instanceof Select)
+            if ($item instanceof Select && $this->alias)
             {
                 $item->withAlias($this->alias);
             }
@@ -513,6 +553,5 @@ class Query
         }
 
         return $sql;
-    }
     }
 }

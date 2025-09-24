@@ -17,7 +17,7 @@ class Insert implements QueryInterface
     /**
      * @var array<string, mixed>
      */
-    protected $values;
+    protected $values = array();
 
     /**
      * @param \Rougin\Ezekiel\Query $query

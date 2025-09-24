@@ -113,4 +113,24 @@ class QueryTest extends Testcase
         $this->assertEquals($data, $actual);
         // ----------------------------------------
     }
+
+    /**
+     * @return void
+     */
+    public function test_with_limit()
+    {
+        // Set expected SQL query and its attached data ---
+        $sql = 'SELECT * FROM users LIMIT 100, 0';
+        // ------------------------------------------------
+
+        // Check if the actual SQL query matched ------
+        $query = new Query;
+
+        $query->select('*')->from('users')->limit(100);
+
+        $actual = $query->toSql();
+
+        $this->assertEquals($sql, $actual);
+        // --------------------------------------------
+    }
 }
