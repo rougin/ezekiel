@@ -12,6 +12,28 @@ class QueryTest extends Testcase
     /**
      * @return void
      */
+    public function test_with_alias()
+    {
+        // Set expected SQL query and its attached data ---
+        $sql = 'SELECT u.* FROM users u WHERE u.name = ?';
+        // ------------------------------------------------
+
+        // Check if the actual SQL query matched ---
+        $query = new Query;
+
+        $query->select('u.*')->from('users')
+            ->withAlias('u')
+            ->where('u.name')->equals('Royce');
+
+        $actual = $query->toSql();
+
+        $this->assertEquals($sql, $actual);
+        // -----------------------------------------
+    }
+
+    /**
+     * @return void
+     */
     public function test_with_group_by()
     {
         // Set expected SQL query and its attached data ---

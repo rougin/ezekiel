@@ -26,6 +26,11 @@ class Query
     const TYPE_HAVING = 7;
 
     /**
+     * @var string|null
+     */
+    protected $alias = null;
+
+    /**
      * @var array<string, mixed>
      */
     protected $binds = array();
@@ -361,6 +366,71 @@ class Query
     }
 
     /**
+     * @param string $alias
+     *
+     * @return self
+     */
+    public function withAlias($alias)
+    {
+        $this->alias = $alias;
+
+        return $this;
+    }
+
+    /**
+     * @param string $sql
+     * @param integer $type
+     *
+     * @return string
+     */
+    protected function setCompareSql($sql, $type)
+    {
+        $isHaving = $type === self::TYPE_HAVING;
+
+        $isWhere = $type === self::TYPE_WHERE;
+
+        $first = true;
+
+        $items = array();
+
+        foreach ($this->items as $item)
+        {
+            // Skip items if not "HAVING" or "WHERE" --------------------------
+            $isTypeHaving = $item->getType() === self::TYPE_HAVING;
+
+            $isTypeWhere = $item->getType() === self::TYPE_WHERE;
+
+            if (($isHaving && ! $isTypeHaving) || ($isWhere && ! $isTypeWhere))
+            {
+                continue;
+            }
+            // ----------------------------------------------------------------
+
+            if ($item instanceof Compare)
+            {
+                $values = $item->getValues();
+
+                $this->binds = array_merge($this->binds, $values);
+            }
+
+            $temp = $item->toSql();
+
+            $text = $isHaving ? 'HAVING' : 'WHERE';
+
+            if (! $first)
+            {
+                $temp = str_replace($text . ' ', '', $temp);
+            }
+
+            $items[] = trim($temp);
+
+            $first = false;
+        }
+
+        return trim($sql . ' ' . implode(' ', $items));
+    }
+
+    /**
      * @return string
      */
     protected function setInsertSql()
@@ -423,62 +493,14 @@ class Query
                 continue;
             }
 
+            if ($item instanceof Select)
+            {
+                $item->withAlias($this->alias);
+            }
+
             return $item->toSql();
         }
 
         return '';
-    }
-
-    /**
-     * @param string $sql
-     * @param integer $type
-     *
-     * @return string
-     */
-    protected function setCompareSql($sql, $type)
-    {
-        $isHaving = $type === self::TYPE_HAVING;
-
-        $isWhere = $type === self::TYPE_WHERE;
-
-        $first = true;
-
-        $items = array();
-
-        foreach ($this->items as $item)
-        {
-            // Skip items if not "HAVING" or "WHERE" --------------------------
-            $isTypeHaving = $item->getType() === self::TYPE_HAVING;
-
-            $isTypeWhere = $item->getType() === self::TYPE_WHERE;
-
-            if (($isHaving && ! $isTypeHaving) || ($isWhere && ! $isTypeWhere))
-            {
-                continue;
-            }
-            // ----------------------------------------------------------------
-
-            if ($item instanceof Compare)
-            {
-                $values = $item->getValues();
-
-                $this->binds = array_merge($this->binds, $values);
-            }
-
-            $temp = $item->toSql();
-
-            $text = $isHaving ? 'HAVING' : 'WHERE';
-
-            if (! $first)
-            {
-                $temp = str_replace($text . ' ', '', $temp);
-            }
-
-            $items[] = trim($temp);
-
-            $first = false;
-        }
-
-        return trim($sql . ' ' . implode(' ', $items));
     }
 }
