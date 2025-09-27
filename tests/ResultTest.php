@@ -2,8 +2,6 @@
 
 namespace Rougin\Ezekiel;
 
-use PDO;
-
 /**
  * @package Ezekiel
  *
@@ -15,22 +13,6 @@ class ResultTest extends Testcase
      * @var \PDO
      */
     protected $pdo;
-
-    /**
-     * Sets up the PDO connection.
-     *
-     * @return void
-     */
-    public function setUp(): void
-    {
-        $this->pdo = new PDO($_SERVER['DB_DRIVER'] . ':' . $_SERVER['DB_DATABASE']);
-
-        $this->pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
-
-        $this->pdo->exec('CREATE TABLE users (id INTEGER, name TEXT)');
-
-        $this->pdo->exec('INSERT INTO users (id, name) VALUES (2, \'Windsor\')');
-    }
 
     /**
      * @return void
@@ -56,4 +38,35 @@ class ResultTest extends Testcase
         $this->assertEquals($data, $actual);
         // ----------------------------------------
     }
+
+    /**
+     * @return void
+     */
+    protected function doSetUp()
+    {
+        // Initialize the database ------------
+        $driver = $_SERVER['DB_DRIVER'];
+
+        $name = $_SERVER['DB_DATABASE'];
+
+        $pdo = new \PDO($driver . ':' . $name);
+        // ------------------------------------
+
+        // Throw PDOException if an error occurs ---
+        $attr = \PDO::ATTR_ERRMODE;
+
+        $key = \PDO::ERRMODE_EXCEPTION;
+
+        $pdo->setAttribute($attr, $key);
+        // -----------------------------------------
+
+        // Create the table and its initial data --------------------------
+        $pdo->exec('CREATE TABLE users (id INTEGER, name TEXT)');
+
+        $pdo->exec('INSERT INTO users (id, name) VALUES (2, \'Windsor\')');
+        // ----------------------------------------------------------------
+
+        $this->pdo = $pdo;
+    }
+
 }
