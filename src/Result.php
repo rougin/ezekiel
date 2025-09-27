@@ -24,31 +24,6 @@ class Result
 
     /**
      * @param \Rougin\Ezekiel\Query $query
-     * @param array<string, mixed>  $data
-     *
-     * @return mixed
-     */
-    protected function resolve($query, $data)
-    {
-        $class = new \ReflectionClass($query);
-
-        foreach ($data as $key => $value)
-        {
-            if ($class->hasProperty($key))
-            {
-                $prop = $class->getProperty($key);
-
-                $prop->setAccessible(true);
-
-                $prop->setValue($query, $value);
-            }
-        }
-
-        return $query;
-    }
-
-    /**
-     * @param \Rougin\Ezekiel\Query $query
      *
      * @return mixed
      */
@@ -108,5 +83,30 @@ class Result
         $stmt->execute(array_values($binds));
 
         return $stmt;
+    }
+
+    /**
+     * @param \Rougin\Ezekiel\Query $query
+     * @param array<string, mixed>  $data
+     *
+     * @return mixed
+     */
+    protected function resolve($query, $data)
+    {
+        $class = new \ReflectionClass($query);
+
+        foreach ($data as $key => $value)
+        {
+            if ($class->hasProperty($key))
+            {
+                $prop = $class->getProperty($key);
+
+                $prop->setAccessible(true);
+
+                $prop->setValue($query, $value);
+            }
+        }
+
+        return $query;
     }
 }
