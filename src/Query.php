@@ -25,6 +25,8 @@ class Query
 
     const TYPE_HAVING = 7;
 
+    const TYPE_JOIN = 8;
+
     /**
      * @var string|null
      */
@@ -197,16 +199,13 @@ class Query
     /**
      * Generates an "INNER JOIN" query.
      *
-     * @param string      $table
-     * @param string      $local
-     * @param string      $foreign
-     * @param string|null $alias
+     * @param string $table
      *
-     * @return self
+     * @return \Rougin\Ezekiel\Join
      */
-    public function innerJoin($table, $local, $foreign, $alias = null)
+    public function innerJoin($table)
     {
-        return $this;
+        return new Join($this, $table, Join::TYPE_INNER);
     }
 
     /**
@@ -228,16 +227,13 @@ class Query
     /**
      * Generates a "LEFT JOIN" query.
      *
-     * @param string      $table
-     * @param string      $local
-     * @param string      $foreign
-     * @param string|null $alias
+     * @param string $table
      *
-     * @return self
+     * @return \Rougin\Ezekiel\Join
      */
-    public function leftJoin($table, $local, $foreign, $alias = null)
+    public function leftJoin($table)
     {
-        return $this;
+        return new Join($this, $table, Join::TYPE_LEFT);
     }
 
     /**
@@ -298,16 +294,13 @@ class Query
     /**
      * Generates a "RIGHT JOIN" query.
      *
-     * @param string      $table
-     * @param string      $local
-     * @param string      $foreign
-     * @param string|null $alias
+     * @param string $table
      *
-     * @return self
+     * @return \Rougin\Ezekiel\Join
      */
-    public function rightJoin($table, $local, $foreign, $alias = null)
+    public function rightJoin($table)
     {
-        return $this;
+        return new Join($this, $table, Join::TYPE_RIGHT);
     }
 
     /**
@@ -362,6 +355,8 @@ class Query
 
             $this->binds = $this->update->getValues();
         }
+
+        $sql = $this->setJoinSql($sql);
 
         $sql = $this->setCompareSql($sql, self::TYPE_WHERE);
 
@@ -528,6 +523,24 @@ class Query
         }
 
         return trim($sql . ' ' . implode(', ', $items));
+    }
+
+    /**
+     * @param string $sql
+     *
+     * @return string
+     */
+    protected function setJoinSql($sql)
+    {
+        foreach ($this->items as $item)
+        {
+            if ($item->getType() === self::TYPE_JOIN)
+            {
+                $sql .= ' ' . $item->toSql();
+            }
+        }
+
+        return $sql;
     }
 
     /**
