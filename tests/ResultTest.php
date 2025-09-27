@@ -17,7 +17,7 @@ class ResultTest extends Testcase
     /**
      * @return void
      */
-    public function test_with_correct_data()
+    public function test_with_multiple_items()
     {
         // Define the expected data --------------------
         $data = array();
@@ -31,9 +31,32 @@ class ResultTest extends Testcase
         $query->select('u.*')->from('users u')
             ->where('u.name')->equals('Windsor');
 
+        $result = new Result($this->pdo);
+
+        $actual = $result->get($query);
+
+        $this->assertEquals($data, $actual);
+        // ----------------------------------------
+    }
+
+    /**
+     * @return void
+     */
+    public function test_with_single_item()
+    {
+        // Define the expected data ------------------
+        $data = array('id' => 2, 'name' => 'Windsor');
+        // -------------------------------------------
+
+        // Check if the actual results returned ---
+        $query = new Query;
+
+        $query->select('u.*')->from('users u')
+            ->where('u.name')->equals('Windsor');
+
         $result = new Result($this->pdo, $query);
 
-        $actual = $result->toItems();
+        $actual = $result->first($query);
 
         $this->assertEquals($data, $actual);
         // ----------------------------------------

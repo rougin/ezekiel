@@ -15,33 +15,49 @@ class Result
     protected $pdo;
 
     /**
-     * @var \Rougin\Ezekiel\Query
+     * @param \PDO $pdo
      */
-    protected $query;
+    public function __construct(\PDO $pdo)
+    {
+        $this->pdo = $pdo;
+    }
 
     /**
-     * @param \PDO                  $pdo
+     * Returns the first item from the query.
+     *
      * @param \Rougin\Ezekiel\Query $query
+     *
+     * @return mixed
      */
-    public function __construct(\PDO $pdo, Query $query)
+    public function first(Query $query)
     {
-        $this->query = $query;
+        $sql = $query->toSql();
 
-        $this->pdo = $pdo;
+        $stmt = $this->pdo->prepare($sql);
+
+        $binds = $query->getBinds();
+
+        $stmt->execute(array_values($binds));
+
+        $type = \PDO::FETCH_ASSOC;
+
+        return $stmt->fetch($type);
     }
 
     /**
      * Returns the items from the query.
      *
+     * @param \Rougin\Ezekiel\Query $query
+     *
      * @return mixed
      */
-    public function toItems()
+    public function get(Query $query)
     {
-        $sql = $this->query->toSql();
+        $sql = $query->toSql();
 
         $stmt = $this->pdo->prepare($sql);
 
-        $binds = $this->query->getBinds();
+        $binds = $query->getBinds();
 
         $stmt->execute(array_values($binds));
 

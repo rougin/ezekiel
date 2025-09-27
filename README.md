@@ -20,7 +20,7 @@ $ composer require rougin/ezekiel
 
 Use the `Query` class to create SQL queries:
 
-```php
+``` php
 use Rougin\Ezekiel\Query;
 
 $query = (new Query)
@@ -44,7 +44,7 @@ $binds = $query->getBinds();
 
 After creating the query, use the `Result` class to return its contents:
 
-```php
+``` php
 use Rougin\Ezekiel\Query;
 use Rougin\Ezekiel\Result;
 
@@ -56,12 +56,14 @@ $query = (new Query)
 
 $pdo = /** returns a PDO instance */;
 
-$result = new Result($pdo, $query);
+$result = new Result($pdo);
 
-echo json_encode($result->asItems());
+$items = $result->get($query);
+
+echo json_encode($items);
 ```
 
-```json
+``` json
 [
   {
     "id": 2,
@@ -84,13 +86,38 @@ echo json_encode($result->asItems());
 ]
 ```
 
+For returning only one item from the result, use the `first` method instead:
+
+``` php
+// ...
+
+use Rougin\Ezekiel\Result;
+
+// ...
+
+$result = new Result($pdo);
+
+$items = $result->first($query);
+
+echo json_encode($items);
+```
+
+``` json
+{
+  "id": 2,
+  "name": "Windsor",
+  "created_at": "2018-10-15 23:09:47",
+  "updated_at": null
+}
+```
+
 ## Available methods
 
 All available SQL statements should be supported by `Ezekiel`. These includes `DELETE FROM`, `INSERT INTO`, `SELECT`, and `UPDATE`:
 
 ### DELETE
 
-```php
+``` php
 use Rougin\Ezekiel\Query;
 
 $query = (new Query)
@@ -106,7 +133,7 @@ $binds = $query->getBinds();
 
 ### INSERT
 
-```php
+``` php
 use Rougin\Ezekiel\Query;
 
 $query = (new Query)
@@ -140,7 +167,7 @@ $binds = $query->getBinds();
 
 ### UPDATE
 
-```php
+``` php
 use Rougin\Ezekiel\Query;
 
 $query = (new Query)
