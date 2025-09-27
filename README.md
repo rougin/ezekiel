@@ -20,46 +20,48 @@ $ composer require rougin/ezekiel
 
 Use the `Query` class to create SQL queries:
 
-``` php
+```php
 use Rougin\Ezekiel\Query;
 
 $query = (new Query)
-    ->select(array('u.id', 'u.name'))
+    ->select(array('u.id', 'u.name', 'p.name as position'))
     ->from('users u')
+    ->leftJoin('positions p')->on('p.id', 'u.position_id')
     ->where('u.name')->like('%winds%')
+    ->having('u.id')->greaterThan(0)
     ->orderBy('u.created_at')->desc();
 
-// SELECT u.id, u.name FROM users u ---
-// WHERE u.name LIKE :u_name ----------
-// ORDER BY u.created_at DESC ---------
+// SELECT u.id, u.name, p.name as position
+// FROM users u
+// LEFT JOIN positions p ON p.id = u.position_id
+// WHERE u.name LIKE ? HAVING u.id > ?
+// ORDER BY u.created_at DESC
 $sql = $query->toSql();
-// ------------------------------------
 
-// array(':u_name' => '%winds%') ---
+// array('name' => '%winds%', 'id' => 0)
 $binds = $query->getBinds();
-// ---------------------------------
 ```
 
-After creating the query, use the `Result` class to return its results:
+After creating the query, use the `Result` class to return its contents:
 
-``` php
+```php
 use Rougin\Ezekiel\Query;
 use Rougin\Ezekiel\Result;
 
-// Sample query from previous example ---
 $query = (new Query)
     ->select(array('u.id', 'u.name'))
     ->from('users', 'u')
     ->where('name')->like('%winds%')
     ->orderBy('created_at')->desc();
-// --------------------------------------
 
-$result = new Result($query);
+$pdo = /** returns a PDO instance */;
+
+$result = new Result($pdo, $query);
 
 echo json_encode($result->asItems());
 ```
 
-``` json
+```json
 [
   {
     "id": 2,
@@ -80,6 +82,77 @@ echo json_encode($result->asItems());
     "updated_at": null
   }
 ]
+```
+
+## Available methods
+
+All available SQL statements should be supported by `Ezekiel`. These includes `DELETE FROM`, `INSERT INTO`, `SELECT`, and `UPDATE`:
+
+### DELETE
+
+```php
+use Rougin\Ezekiel\Query;
+
+$query = (new Query)
+    ->deleteFrom('users')
+    ->where('id')->equals(12);
+
+// DELETE FROM users WHERE id = ?
+$sql = $query->toSql();
+
+// array('id' => 12)
+$binds = $query->getBinds();
+```
+
+### INSERT
+
+```php
+use Rougin\Ezekiel\Query;
+
+$query = (new Query)
+    ->insertInto('users')
+    ->values(array('name' => 'Ezekiel', 'age' => 20));
+
+// INSERT INTO users (name, age) VALUES (?, ?)
+$sql = $query->toSql();
+
+// array('name' => 'Ezekiel', 'age' => 20)
+$binds = $query->getBinds();
+```
+
+### SELECT
+
+``` php
+$query = (new Query)
+    ->select(array('u.id', 'u.name'))
+    ->from('users u')
+    ->where('u.name')->like('%winds%')
+    ->orderBy('u.created_at')->desc();
+
+// SELECT u.id, u.name FROM users u
+// WHERE u.name LIKE ?
+// ORDER BY u.created_at DESC
+$sql = $query->toSql();
+
+// array('name' => '%winds%')
+$binds = $query->getBinds();
+```
+
+### UPDATE
+
+```php
+use Rougin\Ezekiel\Query;
+
+$query = (new Query)
+    ->update('users')
+    ->set('name', 'Ezekiel')
+    ->where('id')->equals(12);
+
+// UPDATE users SET name = ? WHERE id = ?
+$sql = $query->toSql();
+
+// array('name' => 'Ezekiel', 'id' => 12)
+$binds = $query->getBinds();
 ```
 
 ## Renaming from `Windstorm`

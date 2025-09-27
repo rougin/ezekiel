@@ -68,5 +68,4 @@ class ResultTest extends Testcase
 
         $this->pdo = $pdo;
     }
-
 }
