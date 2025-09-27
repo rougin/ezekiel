@@ -43,7 +43,7 @@ class Join implements QueryInterface
     /**
      * @param \Rougin\Ezekiel\Query $query
      * @param string                $table
-     * @param integer          $type
+     * @param integer               $type
      */
     public function __construct(Query $query, $table, $type = self::TYPE_INNER)
     {
