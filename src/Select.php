@@ -76,16 +76,4 @@ class Select implements QueryInterface
 
         return $sql . ' FROM ' . $this->table . $alias;
     }
-
-    /**
-     * @param string $alias
-     *
-     * @return self
-     */
-    public function withAlias($alias)
-    {
-        $this->alias = $alias;
-
-        return $this;
-    }
 }

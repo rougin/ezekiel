@@ -408,18 +408,6 @@ class Query
     }
 
     /**
-     * @param string $alias
-     *
-     * @return self
-     */
-    public function withAlias($alias)
-    {
-        $this->alias = $alias;
-
-        return $this;
-    }
-
-    /**
      * @param string  $sql
      * @param integer $type
      *
@@ -534,10 +522,12 @@ class Query
     {
         foreach ($this->items as $item)
         {
-            if ($item->getType() === self::TYPE_JOIN)
+            if ($item->getType() !== self::TYPE_JOIN)
             {
-                $sql .= ' ' . $item->toSql();
+                continue;
             }
+
+            $sql .= ' ' . $item->toSql();
         }
 
         return $sql;
@@ -555,11 +545,6 @@ class Query
             if ($item->getType() !== self::TYPE_SELECT)
             {
                 continue;
-            }
-
-            if ($item instanceof Select && $this->alias)
-            {
-                $item->withAlias($this->alias);
             }
 
             $sql = $item->toSql();

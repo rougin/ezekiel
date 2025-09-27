@@ -21,8 +21,7 @@ class QueryTest extends Testcase
         // Check if the actual SQL query matched ---
         $query = new Query;
 
-        $query->select('u.*')->from('users')
-            ->withAlias('u')
+        $query->select('u.*')->from('users u')
             ->where('u.name')->equals('Royce');
 
         $actual = $query->toSql();

@@ -25,9 +25,9 @@ use Rougin\Ezekiel\Query;
 
 $query = (new Query)
     ->select(array('u.id', 'u.name'))
-    ->from('users', 'u')
-    ->where('name')->like('%winds%')
-    ->orderBy('created_at')->desc();
+    ->from('users u')
+    ->where('u.name')->like('%winds%')
+    ->orderBy('u.created_at')->desc();
 
 // SELECT u.id, u.name FROM users u ---
 // WHERE u.name LIKE :u_name ----------
