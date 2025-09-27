@@ -14,11 +14,11 @@ class JoinTest extends Testcase
      */
     public function test_with_inner_join()
     {
-        // Set expected SQL query and its attached data ---
+        // Set expected SQL query ------------------------
         $sql = 'SELECT u.* FROM users u';
 
         $sql .= ' INNER JOIN posts p ON p.user_id = u.id';
-        // ------------------------------------------------
+        // -----------------------------------------------
 
         // Check if the actual SQL query matched ---
         $query = new Query;
@@ -38,11 +38,11 @@ class JoinTest extends Testcase
      */
     public function test_with_left_join()
     {
-        // Set expected SQL query and its attached data ---
+        // Set expected SQL query -----------------------
         $sql = 'SELECT u.* FROM users u';
 
         $sql .= ' LEFT JOIN posts p ON p.user_id = u.id';
-        // ------------------------------------------------
+        // ----------------------------------------------
 
         // Check if the actual SQL query matched ---
         $query = new Query;
@@ -62,11 +62,11 @@ class JoinTest extends Testcase
      */
     public function test_with_right_join()
     {
-        // Set expected SQL query and its attached data ---
+        // Set expected SQL query ------------------------
         $sql = 'SELECT u.* FROM users u';
 
         $sql .= ' RIGHT JOIN posts p ON p.user_id = u.id';
-        // ------------------------------------------------
+        // -----------------------------------------------
 
         // Check if the actual SQL query matched ---
         $query = new Query;

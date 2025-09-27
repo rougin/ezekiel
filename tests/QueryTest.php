@@ -14,9 +14,9 @@ class QueryTest extends Testcase
      */
     public function test_with_alias()
     {
-        // Set expected SQL query and its attached data ---
+        // Set expected SQL query ------------------------
         $sql = 'SELECT u.* FROM users u WHERE u.name = ?';
-        // ------------------------------------------------
+        // -----------------------------------------------
 
         // Check if the actual SQL query matched ---
         $query = new Query;
@@ -65,9 +65,9 @@ class QueryTest extends Testcase
      */
     public function test_with_group_by()
     {
-        // Set expected SQL query and its attached data ---
+        // Set expected SQL query -----------------
         $sql = 'SELECT * FROM users GROUP BY name';
-        // ------------------------------------------------
+        // ----------------------------------------
 
         // Check if the actual SQL query matched -----------
         $query = new Query;
@@ -119,9 +119,9 @@ class QueryTest extends Testcase
      */
     public function test_with_limit()
     {
-        // Set expected SQL query and its attached data ---
+        // Set expected SQL query ----------------
         $sql = 'SELECT * FROM users LIMIT 100, 0';
-        // ------------------------------------------------
+        // ---------------------------------------
 
         // Check if the actual SQL query matched ------
         $query = new Query;
