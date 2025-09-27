@@ -23,35 +23,81 @@ class Result
     }
 
     /**
-     * Returns the first item from the query.
+     * @param \Rougin\Ezekiel\Query $query
+     * @param array<string, mixed>  $data
      *
+     * @return mixed
+     */
+    protected function resolve($query, $data)
+    {
+        $class = new \ReflectionClass($query);
+
+        foreach ($data as $key => $value)
+        {
+            if ($class->hasProperty($key))
+            {
+                $prop = $class->getProperty($key);
+
+                $prop->setAccessible(true);
+
+                $prop->setValue($query, $value);
+            }
+        }
+
+        return $query;
+    }
+
+    /**
      * @param \Rougin\Ezekiel\Query $query
      *
      * @return mixed
      */
     public function first(Query $query)
     {
-        $sql = $query->toSql();
+        $stmt = $this->execute($query);
 
-        $stmt = $this->pdo->prepare($sql);
+        /** @var array<string, mixed> */
+        $result = $stmt->fetch(\PDO::FETCH_ASSOC);
 
-        $binds = $query->getBinds();
+        if ($query->isEntity())
+        {
+            return $this->resolve($query, $result);
+        }
 
-        $stmt->execute(array_values($binds));
-
-        $type = \PDO::FETCH_ASSOC;
-
-        return $stmt->fetch($type);
+        return $result;
     }
 
     /**
-     * Returns the items from the query.
-     *
      * @param \Rougin\Ezekiel\Query $query
      *
      * @return mixed
      */
     public function get(Query $query)
+    {
+        $stmt = $this->execute($query);
+
+        /** @var array<string, mixed>[] */
+        $items = $stmt->fetchAll(\PDO::FETCH_ASSOC);
+
+        if (! $query->isEntity())
+        {
+            return $items;
+        }
+
+        foreach ($items as $key => $row)
+        {
+            $items[$key] = $this->resolve($query, $row);
+        }
+
+        return $items;
+    }
+
+    /**
+     * @param \Rougin\Ezekiel\Query $query
+     *
+     * @return \PDOStatement
+     */
+    protected function execute(Query $query)
     {
         $sql = $query->toSql();
 
@@ -61,8 +107,6 @@ class Result
 
         $stmt->execute(array_values($binds));
 
-        $type = \PDO::FETCH_ASSOC;
-
-        return $stmt->fetchAll($type);
+        return $stmt;
     }
 }

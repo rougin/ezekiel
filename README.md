@@ -111,6 +111,66 @@ echo json_encode($items);
 }
 ```
 
+## Using entities
+
+For mapping query results into an entity object, the entity can be extended to the `Entity` class:
+
+```php
+// src/Entities/User.php
+
+namespace Test\Entities;
+
+use Rougin\Ezekiel\Entity;
+
+class User extends Entity
+{
+    protected $id;
+
+    protected $name;
+
+    public function getId()
+    {
+        return $this->id;
+    }
+
+    public function getName()
+    {
+        return $this->name;
+    }
+
+    public function setName($name)
+    {
+        $this->name = $name;
+
+        return $this;
+    }
+}
+```
+
+If an `Entity` is passed to the `Result` class, the results will be automatically to new instances of that `Entity`:
+
+```php
+use Rougin\Ezekiel\Query;
+use Rougin\Ezekiel\Result;
+use Test\Entities\User;
+
+$user = (new User)
+    ->select('id, name')->from('users')
+    ->where('name')->equals('Windsor');
+
+$pdo = /** returns a PDO instance */ ;
+
+$result = new Result($pdo);
+
+/** @var \Rougin\Ezekiel\Fixture\Entities\User[] */
+$users = $result->get($user);
+
+foreach ($users as $user)
+{
+    echo 'Hello ' . $user->getName() . '!<br>';
+}
+```
+
 ## Available methods
 
 All available SQL statements should be supported by `Ezekiel`. These includes `DELETE FROM`, `INSERT INTO`, `SELECT`, and `UPDATE`:

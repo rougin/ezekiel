@@ -38,6 +38,11 @@ class Query
     protected $binds = array();
 
     /**
+     * @var boolean
+     */
+    protected $entity = false;
+
+    /**
      * @var string[]
      */
     protected $fields = array();
@@ -222,6 +227,16 @@ class Query
         $this->table = $table;
 
         return new Insert($this);
+    }
+
+    /**
+     * Checks if the current query is an entity.
+     *
+     * @return boolean
+     */
+    public function isEntity()
+    {
+        return $this->entity;
     }
 
     /**
@@ -485,6 +500,26 @@ class Query
      *
      * @return string
      */
+    protected function setJoinSql($sql)
+    {
+        foreach ($this->items as $item)
+        {
+            if ($item->getType() !== self::TYPE_JOIN)
+            {
+                continue;
+            }
+
+            $sql .= ' ' . $item->toSql();
+        }
+
+        return $sql;
+    }
+
+    /**
+     * @param string $sql
+     *
+     * @return string
+     */
     protected function setOrderSql($sql)
     {
         $first = true;
@@ -511,26 +546,6 @@ class Query
         }
 
         return trim($sql . ' ' . implode(', ', $items));
-    }
-
-    /**
-     * @param string $sql
-     *
-     * @return string
-     */
-    protected function setJoinSql($sql)
-    {
-        foreach ($this->items as $item)
-        {
-            if ($item->getType() !== self::TYPE_JOIN)
-            {
-                continue;
-            }
-
-            $sql .= ' ' . $item->toSql();
-        }
-
-        return $sql;
     }
 
     /**

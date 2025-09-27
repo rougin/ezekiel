@@ -2,6 +2,8 @@
 
 namespace Rougin\Ezekiel;
 
+use Rougin\Ezekiel\Fixture\Entities\User;
+
 /**
  * @package Ezekiel
  *
@@ -13,6 +15,74 @@ class ResultTest extends Testcase
      * @var \PDO
      */
     protected $pdo;
+
+    /**
+     * @return void
+     */
+    public function test_with_entities()
+    {
+        // Define the expected data --------
+        $user = new User;
+
+        $user->setId(2)->setName('Windsor');
+
+        $expected = array($user);
+        // ---------------------------------
+
+        // Check if the actual results returned -----------
+        $query = new User;
+
+        $query->select('id, name')->from('users')
+            ->where('name')->equals('Windsor');
+
+        $result = new Result($this->pdo);
+
+        /** @var \Rougin\Ezekiel\Fixture\Entities\User[] */
+        $actual = $result->get($query);
+
+        $id = $actual[0]->getId();
+
+        $name = $actual[0]->getName();
+
+        $this->assertCount(count($expected), $actual);
+
+        $this->assertEquals($user->getId(), $id);
+
+        $this->assertEquals($user->getName(), $name);
+        // ------------------------------------------------
+    }
+
+    /**
+     * @return void
+     */
+    public function test_with_entity()
+    {
+        // Define the expected data ------------
+        $expected = new User;
+
+        $expected->setId(2)->setName('Windsor');
+        // -------------------------------------
+
+        // Check if the actual results returned ---------
+        $query = new User;
+
+        $query->select('id, name')->from('users')
+            ->where('name')->equals('Windsor');
+
+        $result = new Result($this->pdo);
+
+        /** @var \Rougin\Ezekiel\Fixture\Entities\User */
+        $actual = $result->first($query);
+
+        $id = $actual->getId();
+
+        $name = $actual->getName();
+
+        $this->assertEquals($expected->getId(), $id);
+
+        $this->assertEquals($expected->getName(), $name);
+        // ----------------------------------------------
+    }
 
     /**
      * @return void
@@ -54,7 +124,7 @@ class ResultTest extends Testcase
         $query->select('u.*')->from('users u')
             ->where('u.name')->equals('Windsor');
 
-        $result = new Result($this->pdo, $query);
+        $result = new Result($this->pdo);
 
         $actual = $result->first($query);
 
