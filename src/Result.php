@@ -97,13 +97,23 @@ class Result
 
         foreach ($data as $key => $value)
         {
-            if ($class->hasProperty($key))
+            if (! $class->hasProperty($key))
             {
-                $prop = $class->getProperty($key);
+                continue;
+            }
 
+            $prop = $class->getProperty($key);
+
+            if (! $prop->isPublic())
+            {
                 $prop->setAccessible(true);
+            }
 
-                $prop->setValue($query, $value);
+            $prop->setValue($query, $value);
+
+            if (! $prop->isPublic())
+            {
+                $prop->setAccessible(false);
             }
         }
 
