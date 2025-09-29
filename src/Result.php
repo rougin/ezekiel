@@ -45,9 +45,9 @@ class Result
     /**
      * @param \Rougin\Ezekiel\Query $query
      *
-     * @return mixed
+     * @return mixed[]
      */
-    public function get(Query $query)
+    public function items(Query $query)
     {
         $stmt = $this->execute($query);
 
