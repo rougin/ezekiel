@@ -248,7 +248,7 @@ As being renamed from `Windstorm`, this will introduce [backward compatibility](
 
 > I also want to extend this plan to my personal packages as well like [Staticka](https://github.com/staticka/staticka) and [Transcribe](https://github.com/rougin/transcribe). With this, I will introduce backward compatibility breaks to them initially as it is hard to migrate their codebase due to minimal to no documentation being provided in its basic usage and its internals. As I checked their code, I realized that they are also over engineered, which is a mistake that I needed to atone for when updating my packages in the future.
 
-Since the previous name was never released with a version, no `UPGRADING.md` was created. As such, please see [commit c95c775](https://github.com/rougin/ezekiel/tree/c95c77506087db19033997d1e752ce01c9294056) of this repository for the files that were removed or updated in this last commit.
+Please see the [UPGRADING][link-upgrading] page for the specified breaking changes.
 
 ## Changelog
 
