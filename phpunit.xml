@@ -15,8 +15,4 @@
       <text outputFile="build/coverage.txt"/>
     </report>
   </coverage>
-  <php>
-    <server name="DB_DRIVER" value="sqlite"/>
-    <server name="DB_DATABASE" value=":memory:"/>
-  </php>
 </phpunit>
