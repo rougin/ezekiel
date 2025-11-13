@@ -132,27 +132,25 @@ class ResultTest extends Testcase
      */
     protected function doSetUp()
     {
-        // Initialize the database ------------
-        $driver = $_SERVER['DB_DRIVER'];
+        // Initialize the database --------
+        $pdo = new \PDO('sqlite::memory:');
 
-        $name = $_SERVER['DB_DATABASE'];
-
-        $pdo = new \PDO($driver . ':' . $name);
-        // ------------------------------------
-
-        // Throw PDOException if an error occurs ---
         $attr = \PDO::ATTR_ERRMODE;
 
         $key = \PDO::ERRMODE_EXCEPTION;
 
         $pdo->setAttribute($attr, $key);
-        // -----------------------------------------
+        // --------------------------------
 
-        // Create the table and its initial data --------------------------
-        $pdo->exec('CREATE TABLE users (id INTEGER, name TEXT)');
+        // Create the table and its initial data -----------------------
+        $query = 'CREATE TABLE users (id INTEGER, name TEXT)';
 
-        $pdo->exec('INSERT INTO users (id, name) VALUES (2, \'Windsor\')');
-        // ----------------------------------------------------------------
+        $pdo->exec($query);
+
+        $query = 'INSERT INTO users (id, name) VALUES (2, \'Windsor\')';
+
+        $pdo->exec($query);
+        // -------------------------------------------------------------
 
         $this->pdo = $pdo;
     }
