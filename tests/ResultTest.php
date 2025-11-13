@@ -3,6 +3,7 @@
 namespace Rougin\Ezekiel;
 
 use Rougin\Ezekiel\Fixture\Entities\User;
+use Rougin\Ezekiel\Fixture\Results\UserResult;
 
 /**
  * @package Ezekiel
@@ -25,31 +26,26 @@ class ResultTest extends Testcase
         $user = new User;
 
         $user->setId(2)->setName('Windsor');
-
-        $expected = array($user);
         // ---------------------------------
 
-        // Check if the actual results returned -----------
+        // Check if the actual results returned ---
         $query = new User;
 
         $query->select('id, name')->from('users')
             ->where('name')->equals('Windsor');
 
-        $result = new Result($this->pdo);
+        $result = new UserResult($this->pdo);
 
-        /** @var \Rougin\Ezekiel\Fixture\Entities\User[] */
-        $actual = $result->get($query);
+        $items = $result->items($query);
 
-        $id = $actual[0]->getId();
+        $expect = $user->getName();
+        $actual = $items[0]->getName();
+        $this->assertEquals($expect, $actual);
 
-        $name = $actual[0]->getName();
-
-        $this->assertCount(count($expected), $actual);
-
-        $this->assertEquals($user->getId(), $id);
-
-        $this->assertEquals($user->getName(), $name);
-        // ------------------------------------------------
+        $expect = $user->getId();
+        $actual = $items[0]->getId();
+        $this->assertEquals($expect, $actual);
+        // ----------------------------------------
     }
 
     /**
@@ -57,31 +53,30 @@ class ResultTest extends Testcase
      */
     public function test_with_entity()
     {
-        // Define the expected data ------------
-        $expected = new User;
+        // Define the expected data --------
+        $user = new User;
 
-        $expected->setId(2)->setName('Windsor');
-        // -------------------------------------
+        $user->setId(2)->setName('Windsor');
+        // ---------------------------------
 
-        // Check if the actual results returned ---------
+        // Check if the actual results returned ---
         $query = new User;
 
         $query->select('id, name')->from('users')
             ->where('name')->equals('Windsor');
 
-        $result = new Result($this->pdo);
+        $result = new UserResult($this->pdo);
 
-        /** @var \Rougin\Ezekiel\Fixture\Entities\User */
-        $actual = $result->first($query);
+        $item = $result->first($query);
 
-        $id = $actual->getId();
+        $expect = $user->getName();
+        $actual = $item->getName();
+        $this->assertEquals($expect, $actual);
 
-        $name = $actual->getName();
-
-        $this->assertEquals($expected->getId(), $id);
-
-        $this->assertEquals($expected->getName(), $name);
-        // ----------------------------------------------
+        $expect = $user->getId();
+        $actual = $item->getId();
+        $this->assertEquals($expect, $actual);
+        // ----------------------------------------
     }
 
     /**
@@ -103,7 +98,7 @@ class ResultTest extends Testcase
 
         $result = new Result($this->pdo);
 
-        $actual = $result->get($query);
+        $actual = $result->items($query);
 
         $this->assertEquals($data, $actual);
         // ----------------------------------------

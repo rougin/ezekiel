@@ -58,7 +58,7 @@ $pdo = /** returns a PDO instance */;
 
 $result = new Result($pdo);
 
-$items = $result->get($query);
+$items = $result->items($query);
 
 echo json_encode($items);
 ```
@@ -163,7 +163,7 @@ $pdo = /** returns a PDO instance */ ;
 $result = new Result($pdo);
 
 /** @var \Rougin\Ezekiel\Fixture\Entities\User[] */
-$users = $result->get($user);
+$users = $result->items($user);
 
 foreach ($users as $user)
 {
