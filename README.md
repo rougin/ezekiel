@@ -8,6 +8,10 @@
 
 An expressive SQL query builder in PHP. This package is previously known as [Windstorm](https://github.com/rougin/ezekiel/tree/c95c77506087db19033997d1e752ce01c9294056).
 
+## Why
+
+I tried to unify [Doctrine](https://www.doctrine-project.org/) and [Eloquent](https://laravel.com/docs/5.0/eloquent) into a single interface for them to be swappable. Unfortunately the implementation is not possible because of the different core design patterns ([data mapper](https://en.wikipedia.org/wiki/Data_mapper_pattern) for Doctrine while [active record](https://en.wikipedia.org/wiki/Active_record_pattern) for Eloquent). I realized later that the one thing common for both is their query builder and it was also common on all existing ORM packages and SQL query builders.
+
 ## Installation
 
 Install `Ezekiel` through [Composer](https://getcomposer.org/):
@@ -252,39 +256,11 @@ Please see the [UPGRADING][link-upgrading] page for the specified breaking chang
 
 ## Changelog
 
-Please see [CHANGELOG][link-changelog] for more information what has changed recently.
+Please see [CHANGELOG](CHANGELOG.md) for more recent changes.
 
-## Development
+## Contributing
 
-Includes tools for code quality, coding style, and unit tests.
-
-### Code quality
-
-Analyze code quality using [phpstan](https://phpstan.org/):
-
-``` bash
-$ phpstan
-```
-
-### Coding style
-
-Enforce coding style using [php-cs-fixer](https://cs.symfony.com/):
-
-``` bash
-$ php-cs-fixer fix --config=phpstyle.php
-```
-
-### Unit tests
-
-Execute unit tests using [phpunit](https://phpunit.de/index.html):
-
-``` bash
-$ vendor/bin/phpunit
-```
-
-## Credits
-
-- [All contributors][link-contributors]
+See [CONTRIBUTING](CONTRIBUTING.md) on how to contribute.
 
 ## License
 
@@ -303,3 +279,4 @@ The MIT License (MIT). Please see [LICENSE][link-license] for more information.
 [link-downloads]: https://packagist.org/packages/rougin/ezekiel
 [link-license]: https://github.com/rougin/ezekiel/blob/master/LICENSE.md
 [link-packagist]: https://packagist.org/packages/rougin/ezekiel
+[link-upgrading]: https://github.com/rougin/ezekiel/blob/master/UPGRADING.md
