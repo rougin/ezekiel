@@ -229,6 +229,26 @@ $sql = $query->toSql();
 $binds = $query->getBinds();
 ```
 
+For granular conditions, use the `whereGroup` method to enclose multiple conditions in parentheses:
+
+``` php
+$query = (new Query)
+    ->select('*')->from('users')
+    ->where('status')->equals(1)
+    ->whereGroup(function (Query $query)
+    {
+        $query->where('name')->equals('Alice')
+            ->orWhere('name')->equals('Bob');
+    });
+
+// SELECT * FROM users
+// WHERE status = ? AND (name = ? OR name = ?)
+$sql = $query->toSql();
+
+// array('status' => 1, 'name' => 'Alice', 'name' => 'Bob')
+$binds = $query->getBinds();
+```
+
 ### UPDATE
 
 ``` php

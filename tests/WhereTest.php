@@ -425,4 +425,79 @@ class WhereTest extends Testcase
         $this->assertEquals($data, $actual);
         // ----------------------------------------
     }
+
+    /**
+     * @return void
+     */
+    public function test_with_callback()
+    {
+        // Set expected SQL query and its attached data ---
+        $sql = 'SELECT * FROM users ';
+
+        $sql .= 'WHERE (name = ? OR status = ?)';
+
+        $data = array('name' => 'Alice', 'status' => 1);
+        // ------------------------------------------------
+
+        // Check if the actual SQL query matched ----
+        $query = new Query;
+
+        $query->select('*')->from('users')
+            ->whereGroup(function (Query $self)
+            {
+                $self->where('name')->equals('Alice')
+                    ->orWhere('status')->equals(1);
+            });
+
+        $actual = $query->toSql();
+
+        $this->assertEquals($sql, $actual);
+        // ------------------------------------------
+
+        // Check if the actual bindings matched ---
+        $actual = $query->getBinds();
+
+        $this->assertEquals($data, $actual);
+        // ----------------------------------------
+    }
+
+    /**
+     * @return void
+     */
+    public function test_with_callback_and_chain()
+    {
+        // Set expected SQL query and its attached data -----
+        $sql = 'SELECT * FROM users ';
+
+        $sql .= 'WHERE (name = ? OR age > ?) AND status = ?';
+
+        $data = array('name' => 'Alice', 'age' => 5);
+
+        $data['status'] = 1;
+        // --------------------------------------------------
+
+        // Check if the actual SQL query matched ---
+        $query = new Query;
+
+        $query->select('*')->from('users');
+
+        $query->whereGroup(function (Query $self)
+        {
+            $self->where('name')->equals('Alice')
+                ->orWhere('age')->greaterThan(5);
+        });
+
+        $query->andWhere('status')->equals(1);
+
+        $actual = $query->toSql();
+
+        $this->assertEquals($sql, $actual);
+        // -----------------------------------------
+
+        // Check if the actual bindings matched ---
+        $actual = $query->getBinds();
+
+        $this->assertEquals($data, $actual);
+        // ----------------------------------------
+    }
 }

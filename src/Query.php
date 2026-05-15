@@ -159,6 +159,16 @@ class Query
     }
 
     /**
+     * Returns all registered query items.
+     *
+     * @return \Rougin\Ezekiel\QueryInterface[]
+     */
+    public function getItems()
+    {
+        return $this->items;
+    }
+
+    /**
      * Returns the table name from the query.
      *
      * @return string
@@ -423,6 +433,36 @@ class Query
     }
 
     /**
+     * Generates a grouped "WHERE" query using a callable.
+     * The conditions inside the callable are enclosed in parentheses.
+     *
+     * @param callable $callback
+     *
+     * @return self
+     */
+    public function whereGroup($callback)
+    {
+        return $this->addWhereGroup($callback, Compare::GROUP_NONE);
+    }
+
+    /**
+     * @param callable $callback
+     * @param integer  $group
+     *
+     * @return self
+     */
+    protected function addWhereGroup($callback, $group)
+    {
+        $self = new Query;
+
+        call_user_func($callback, $self);
+
+        $item = new WhereGroup($self, $group);
+
+        return $this->addItem($item);
+    }
+
+    /**
      * @param string  $sql
      * @param integer $type
      *
@@ -451,7 +491,7 @@ class Query
             }
             // ----------------------------------------------------------------
 
-            if ($item instanceof Compare)
+            if (method_exists($item, 'getValues'))
             {
                 $values = $item->getValues();
 
