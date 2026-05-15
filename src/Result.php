@@ -104,14 +104,14 @@ class Result
 
             $prop = $class->getProperty($key);
 
-            if (! $prop->isPublic())
+            if (! $prop->isPublic() && PHP_VERSION_ID < 80500)
             {
                 $prop->setAccessible(true);
             }
 
             $prop->setValue($query, $value);
 
-            if (! $prop->isPublic())
+            if (! $prop->isPublic() && PHP_VERSION_ID < 80500)
             {
                 $prop->setAccessible(false);
             }
