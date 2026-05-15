@@ -12,7 +12,7 @@ class InsertTest extends Testcase
     /**
      * @return void
      */
-    public function test_with_values()
+    public function test_passed_if_insert_uses_values()
     {
         // Set expected SQL query and its attached data -----
         $sql = 'INSERT INTO users (name, age) VALUES (?, ?)';

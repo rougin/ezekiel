@@ -12,7 +12,7 @@ class UpdateTest extends Testcase
     /**
      * @return void
      */
-    public function test_with_set()
+    public function test_passed_if_update_uses_set()
     {
         // Set expected SQL query and its attached data ---------
         $sql = 'UPDATE users SET name = ?, age = ? WHERE id = ?';

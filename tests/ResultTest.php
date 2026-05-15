@@ -20,7 +20,7 @@ class ResultTest extends Testcase
     /**
      * @return void
      */
-    public function test_with_entities()
+    public function test_passed_if_result_returns_entities()
     {
         // Define the expected data --------
         $user = new User;
@@ -51,7 +51,7 @@ class ResultTest extends Testcase
     /**
      * @return void
      */
-    public function test_with_entity()
+    public function test_passed_if_result_returns_entity()
     {
         // Define the expected data --------
         $user = new User;
@@ -82,7 +82,30 @@ class ResultTest extends Testcase
     /**
      * @return void
      */
-    public function test_with_multiple_items()
+    public function test_passed_if_result_returns_item()
+    {
+        // Define the expected data ------------------
+        $data = array('id' => 2, 'name' => 'Windsor');
+        // -------------------------------------------
+
+        // Check if the actual results returned ---
+        $query = new Query;
+
+        $query->select('u.*')->from('users u')
+            ->where('u.name')->equals('Windsor');
+
+        $result = new Result($this->pdo);
+
+        $actual = $result->first($query);
+
+        $this->assertEquals($data, $actual);
+        // ----------------------------------------
+    }
+
+    /**
+     * @return void
+     */
+    public function test_passed_if_result_returns_items()
     {
         // Define the expected data --------------------
         $data = array();
@@ -99,29 +122,6 @@ class ResultTest extends Testcase
         $result = new Result($this->pdo);
 
         $actual = $result->items($query);
-
-        $this->assertEquals($data, $actual);
-        // ----------------------------------------
-    }
-
-    /**
-     * @return void
-     */
-    public function test_with_single_item()
-    {
-        // Define the expected data ------------------
-        $data = array('id' => 2, 'name' => 'Windsor');
-        // -------------------------------------------
-
-        // Check if the actual results returned ---
-        $query = new Query;
-
-        $query->select('u.*')->from('users u')
-            ->where('u.name')->equals('Windsor');
-
-        $result = new Result($this->pdo);
-
-        $actual = $result->first($query);
 
         $this->assertEquals($data, $actual);
         // ----------------------------------------

@@ -12,7 +12,7 @@ class JoinTest extends Testcase
     /**
      * @return void
      */
-    public function test_with_inner_join()
+    public function test_passed_if_join_uses_inner()
     {
         // Set expected SQL query ------------------------
         $sql = 'SELECT u.* FROM users u';
@@ -36,7 +36,7 @@ class JoinTest extends Testcase
     /**
      * @return void
      */
-    public function test_with_left_join()
+    public function test_passed_if_join_uses_left()
     {
         // Set expected SQL query -----------------------
         $sql = 'SELECT u.* FROM users u';
@@ -60,7 +60,7 @@ class JoinTest extends Testcase
     /**
      * @return void
      */
-    public function test_with_right_join()
+    public function test_passed_if_join_uses_right()
     {
         // Set expected SQL query ------------------------
         $sql = 'SELECT u.* FROM users u';

@@ -12,28 +12,7 @@ class QueryTest extends Testcase
     /**
      * @return void
      */
-    public function test_with_alias()
-    {
-        // Set expected SQL query ------------------------
-        $sql = 'SELECT u.* FROM users u WHERE u.name = ?';
-        // -----------------------------------------------
-
-        // Check if the actual SQL query matched ---
-        $query = new Query;
-
-        $query->select('u.*')->from('users u')
-            ->where('u.name')->equals('Royce');
-
-        $actual = $query->toSql();
-
-        $this->assertEquals($sql, $actual);
-        // -----------------------------------------
-    }
-
-    /**
-     * @return void
-     */
-    public function test_with_delete()
+    public function test_passed_if_delete_from_has_where()
     {
         // Set expected SQL query and its attached data ---
         $sql = 'DELETE FROM users WHERE name = ?';
@@ -62,7 +41,7 @@ class QueryTest extends Testcase
     /**
      * @return void
      */
-    public function test_with_group_by()
+    public function test_passed_if_select_has_group_by()
     {
         // Set expected SQL query -----------------
         $sql = 'SELECT * FROM users GROUP BY name';
@@ -82,7 +61,7 @@ class QueryTest extends Testcase
     /**
      * @return void
      */
-    public function test_with_having()
+    public function test_passed_if_select_has_having()
     {
         // Set expected SQL query and its attached data ------------
         $sql = 'SELECT * FROM users GROUP BY name, age, date';
@@ -116,7 +95,7 @@ class QueryTest extends Testcase
     /**
      * @return void
      */
-    public function test_with_limit()
+    public function test_passed_if_select_has_limit()
     {
         // Set expected SQL query ----------------
         $sql = 'SELECT * FROM users LIMIT 100, 0';
@@ -131,5 +110,26 @@ class QueryTest extends Testcase
 
         $this->assertEquals($sql, $actual);
         // --------------------------------------------
+    }
+
+    /**
+     * @return void
+     */
+    public function test_passed_if_select_uses_alias()
+    {
+        // Set expected SQL query ------------------------
+        $sql = 'SELECT u.* FROM users u WHERE u.name = ?';
+        // -----------------------------------------------
+
+        // Check if the actual SQL query matched ---
+        $query = new Query;
+
+        $query->select('u.*')->from('users u')
+            ->where('u.name')->equals('Royce');
+
+        $actual = $query->toSql();
+
+        $this->assertEquals($sql, $actual);
+        // -----------------------------------------
     }
 }
