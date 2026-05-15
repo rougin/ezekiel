@@ -132,4 +132,45 @@ class QueryTest extends Testcase
         $this->assertEquals($sql, $actual);
         // -----------------------------------------
     }
+
+    /**
+     * @return void
+     */
+    public function test_passed_if_snake_case_method_is_callable()
+    {
+        // Set expected SQL query and its attached data ---
+        $sql = 'SELECT * FROM users WHERE name = ?';
+
+        $data = array('name' => 'Royce');
+        // ------------------------------------------------
+
+        // Check if the actual SQL query matched ---
+        $query = new Query;
+
+        $query->select('*')->from('users')
+            ->where('name')->equals('Royce');
+
+        $actual = $query->to_sql();
+
+        $this->assertEquals($sql, $actual);
+        // -----------------------------------------
+
+        // Check if the actual bindings matched ---
+        $actual = $query->get_binds();
+
+        $this->assertEquals($data, $actual);
+        // ----------------------------------------
+    }
+
+    /**
+     * @return void
+     */
+    public function test_passed_if_snake_case_rejects_invalid_method()
+    {
+        $this->doExpectException('\BadMethodCallException');
+
+        $query = new Query;
+
+        $query->__call('invalid_method', array());
+    }
 }

@@ -130,6 +130,38 @@ class ResultTest extends Testcase
     /**
      * @return void
      */
+    public function test_passed_if_result_skips_unknown_columns()
+    {
+        // Define the expected data --------
+        $user = new User;
+
+        $user->setId(2)->setName('Windsor');
+        // ---------------------------------
+
+        // Check if the actual results returned ----
+        $query = new User;
+
+        $query->select('id, name, 1 AS extra_field')
+            ->from('users')
+            ->where('name')->equals('Windsor');
+
+        $result = new UserResult($this->pdo);
+
+        $item = $result->first($query);
+
+        $expect = $user->getName();
+        $actual = $item->getName();
+        $this->assertEquals($expect, $actual);
+
+        $expect = $user->getId();
+        $actual = $item->getId();
+        $this->assertEquals($expect, $actual);
+        // -----------------------------------------
+    }
+
+    /**
+     * @return void
+     */
     protected function doSetUp()
     {
         // Initialize the database --------

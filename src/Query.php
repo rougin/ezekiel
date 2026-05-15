@@ -3,6 +3,28 @@
 namespace Rougin\Ezekiel;
 
 /**
+ * @method self                             add_item(\Rougin\Ezekiel\QueryInterface $query)
+ * @method \Rougin\Ezekiel\Having           and_having(string $key)
+ * @method \Rougin\Ezekiel\Order            and_order_by(string $key)
+ * @method \Rougin\Ezekiel\Where            and_where(string $key)
+ * @method self                             and_where_group(callable $callback)
+ * @method self                             delete_from(string $table)
+ * @method array<string, mixed>             get_binds()
+ * @method \Rougin\Ezekiel\QueryInterface[] get_items()
+ * @method string                           get_table()
+ * @method self                             group_by(string|string[] $fields)
+ * @method \Rougin\Ezekiel\Join             inner_join(string $table)
+ * @method \Rougin\Ezekiel\Insert           insert_into(string $table)
+ * @method boolean                          is_entity()
+ * @method \Rougin\Ezekiel\Join             left_join(string $table)
+ * @method \Rougin\Ezekiel\Having           or_having(string $key)
+ * @method \Rougin\Ezekiel\Where            or_where(string $key)
+ * @method self                             or_where_group(callable $callback)
+ * @method \Rougin\Ezekiel\Order            order_by(string $key)
+ * @method \Rougin\Ezekiel\Join             right_join(string $table)
+ * @method string                           to_sql()
+ * @method self                             where_group(callable $callback)
+ *
  * @package Ezekiel
  *
  * @author Rougin Gutib <rougingutib@gmail.com>
@@ -434,7 +456,6 @@ class Query
 
     /**
      * Generates a grouped "WHERE" query using a callable.
-     * The conditions inside the callable are enclosed in parentheses.
      *
      * @param callable $callback
      *
@@ -443,6 +464,59 @@ class Query
     public function whereGroup($callback)
     {
         return $this->addWhereGroup($callback, Compare::GROUP_NONE);
+    }
+
+    /**
+     * Generates a grouped "AND WHERE" query using a callable.
+     *
+     * @param callable $callback
+     *
+     * @return self
+     */
+    public function andWhereGroup($callback)
+    {
+        return $this->addWhereGroup($callback, Compare::GROUP_AND);
+    }
+
+    /**
+     * Generates a grouped "OR WHERE" query using a callable.
+     *
+     * @param callable $callback
+     *
+     * @return self
+     */
+    public function orWhereGroup($callback)
+    {
+        return $this->addWhereGroup($callback, Compare::GROUP_OR);
+    }
+
+    /**
+     * Converts snake_case methods to camelCase.
+     *
+     * @param string $method
+     * @param mixed  $arguments
+     *
+     * @return mixed
+     */
+    public function __call($method, $arguments)
+    {
+        $parts = str_replace('_', ' ', $method);
+
+        $camel = str_replace(' ', '', ucwords($parts));
+
+        $camel = lcfirst($camel);
+
+        if (method_exists($this, $camel))
+        {
+            /** @var callable */
+            $callback = array($this, $camel);
+
+            return call_user_func_array($callback, (array) $arguments);
+        }
+
+        $error = __CLASS__ . '::' . $method . '()';
+
+        throw new \BadMethodCallException($error);
     }
 
     /**
@@ -491,7 +565,7 @@ class Query
             }
             // ----------------------------------------------------------------
 
-            if (method_exists($item, 'getValues'))
+            if ($item instanceof Compare || $item instanceof WhereGroup)
             {
                 $values = $item->getValues();
 

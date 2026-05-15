@@ -41,7 +41,7 @@ class WhereGroup implements QueryInterface
                 continue;
             }
 
-            if (method_exists($item, 'getValues'))
+            if ($item instanceof Compare)
             {
                 $this->binds = array_merge($this->binds, $item->getValues());
             }

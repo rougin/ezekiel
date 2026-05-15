@@ -12,6 +12,84 @@ class WhereTest extends Testcase
     /**
      * @return void
      */
+    public function test_passed_if_and_where_group_exists()
+    {
+        // Set expected SQL query and its attached data -----
+        $sql = 'SELECT * FROM users ';
+
+        $sql .= 'WHERE name = ? AND (age > ? OR status = ?)';
+
+        $data = array('name' => 'Alice', 'age' => 5);
+
+        $data['status'] = 1;
+        // --------------------------------------------------
+
+        // Check if the actual SQL query matched ---
+        $query = new Query;
+
+        $query->select('*')->from('users')
+            ->where('name')->equals('Alice');
+
+        $query->andWhereGroup(function (Query $inner)
+        {
+            $inner->where('age')->greaterThan(5)
+                ->orWhere('status')->equals(1);
+        });
+
+        $actual = $query->toSql();
+
+        $this->assertEquals($sql, $actual);
+        // -----------------------------------------
+
+        // Check if the actual bindings matched ---
+        $actual = $query->getBinds();
+
+        $this->assertEquals($data, $actual);
+        // ----------------------------------------
+    }
+
+    /**
+     * @return void
+     */
+    public function test_passed_if_or_where_group_exists()
+    {
+        // Set expected SQL query and its attached data ----
+        $sql = 'SELECT * FROM users ';
+
+        $sql .= 'WHERE name = ? OR (age > ? OR status = ?)';
+
+        $data = array('name' => 'Alice', 'age' => 5);
+
+        $data['status'] = 1;
+        // -------------------------------------------------
+
+        // Check if the actual SQL query matched ---
+        $query = new Query;
+
+        $query->select('*')->from('users')
+            ->where('name')->equals('Alice');
+
+        $query->orWhereGroup(function (Query $inner)
+        {
+            $inner->where('age')->greaterThan(5)
+                ->orWhere('status')->equals(1);
+        });
+
+        $actual = $query->toSql();
+
+        $this->assertEquals($sql, $actual);
+        // -----------------------------------------
+
+        // Check if the actual bindings matched ---
+        $actual = $query->getBinds();
+
+        $this->assertEquals($data, $actual);
+        // ----------------------------------------
+    }
+
+    /**
+     * @return void
+     */
     public function test_passed_if_where_chains_and_or()
     {
         // Set expected SQL query and its attached data ---
@@ -76,6 +154,31 @@ class WhereTest extends Testcase
 
         $this->assertEquals($data, $actual);
         // ----------------------------------------
+    }
+
+    /**
+     * @return void
+     */
+    public function test_passed_if_where_group_skips_non_where()
+    {
+        // Set expected SQL query --------------------
+        $sql = 'SELECT * FROM users WHERE (name = ?)';
+        // -------------------------------------------
+
+        $query = new Query;
+
+        $query->select('*')->from('users')
+            ->whereGroup(function (Query $inner)
+            {
+                $inner->where('name')->equals('Alice');
+                $inner->innerJoin('orders')->on('u.id', 'o.user_id');
+            });
+
+        // Check if the actual SQL query matched ---
+        $actual = $query->toSql();
+
+        $this->assertEquals($sql, $actual);
+        // -----------------------------------------
     }
 
     /**
