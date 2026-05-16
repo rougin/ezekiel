@@ -1,6 +1,6 @@
 <?php
 
-namespace Rougin\Ezekiel;
+namespace Rougin\Ezekiel\Query;
 
 /**
  * @package Ezekiel
@@ -12,5 +12,5 @@ class Having extends Compare
     /**
      * @var integer
      */
-    protected $type = Query::TYPE_HAVING;
+    protected $type = \Rougin\Ezekiel\Query::TYPE_HAVING;
 }

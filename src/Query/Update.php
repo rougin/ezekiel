@@ -1,6 +1,6 @@
 <?php
 
-namespace Rougin\Ezekiel;
+namespace Rougin\Ezekiel\Query;
 
 /**
  * @package Ezekiel
@@ -22,7 +22,7 @@ class Update
     /**
      * @param \Rougin\Ezekiel\Query $query
      */
-    public function __construct(Query $query)
+    public function __construct(\Rougin\Ezekiel\Query $query)
     {
         $this->query = $query;
     }
@@ -53,14 +53,16 @@ class Update
      */
     public function toSql()
     {
+        $dialect = $this->query->getDialect();
+
         $items = array();
 
         foreach ($this->values as $name => $value)
         {
-            $items[] = $name . ' = ?';
+            $items[] = $dialect->quoteIdentifier($name) . ' = ?';
         }
 
-        $table = $this->query->getTable();
+        $table = $dialect->quoteIdentifier($this->query->getTable());
 
         $keys = implode(', ', $items);
 

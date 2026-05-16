@@ -2,26 +2,39 @@
 
 namespace Rougin\Ezekiel;
 
+use Rougin\Ezekiel\Dialect\MysqlDialect;
+use Rougin\Ezekiel\Query\Compare;
+use Rougin\Ezekiel\Query\Having;
+use Rougin\Ezekiel\Query\Insert;
+use Rougin\Ezekiel\Query\Join;
+use Rougin\Ezekiel\Query\Order;
+use Rougin\Ezekiel\Query\Select;
+use Rougin\Ezekiel\Query\Update;
+use Rougin\Ezekiel\Query\Where;
+use Rougin\Ezekiel\Query\WhereGroup;
+
 /**
  * @method self                             add_item(\Rougin\Ezekiel\QueryInterface $query)
- * @method \Rougin\Ezekiel\Having           and_having(string $key)
- * @method \Rougin\Ezekiel\Order            and_order_by(string $key)
- * @method \Rougin\Ezekiel\Where            and_where(string $key)
+ * @method \Rougin\Ezekiel\Query\Having     and_having(string $key)
+ * @method \Rougin\Ezekiel\Query\Order      and_order_by(string $key)
+ * @method \Rougin\Ezekiel\Query\Where      and_where(string $key)
  * @method self                             and_where_group(callable $callback)
  * @method self                             delete_from(string $table)
  * @method array<string, mixed>             get_binds()
+ * @method \Rougin\Ezekiel\DialectInterface get_dialect()
  * @method \Rougin\Ezekiel\QueryInterface[] get_items()
  * @method string                           get_table()
  * @method self                             group_by(string|string[] $fields)
- * @method \Rougin\Ezekiel\Join             inner_join(string $table)
- * @method \Rougin\Ezekiel\Insert           insert_into(string $table)
+ * @method \Rougin\Ezekiel\Query\Join       inner_join(string $table)
+ * @method \Rougin\Ezekiel\Query\Insert     insert_into(string $table)
  * @method boolean                          is_entity()
- * @method \Rougin\Ezekiel\Join             left_join(string $table)
- * @method \Rougin\Ezekiel\Having           or_having(string $key)
- * @method \Rougin\Ezekiel\Where            or_where(string $key)
+ * @method \Rougin\Ezekiel\Query\Join       left_join(string $table)
+ * @method \Rougin\Ezekiel\Query\Having     or_having(string $key)
+ * @method \Rougin\Ezekiel\Query\Where      or_where(string $key)
  * @method self                             or_where_group(callable $callback)
- * @method \Rougin\Ezekiel\Order            order_by(string $key)
- * @method \Rougin\Ezekiel\Join             right_join(string $table)
+ * @method \Rougin\Ezekiel\Query\Order      order_by(string $key)
+ * @method \Rougin\Ezekiel\Query\Join       right_join(string $table)
+ * @method self                             set_dialect(\Rougin\Ezekiel\DialectInterface $dialect)
  * @method string                           to_sql()
  * @method self                             where_group(callable $callback)
  *
@@ -58,6 +71,11 @@ class Query
      * @var array<string, mixed>
      */
     protected $binds = array();
+
+    /**
+     * @var \Rougin\Ezekiel\DialectInterface|null
+     */
+    protected $dialect = null;
 
     /**
      * @var boolean
@@ -100,9 +118,38 @@ class Query
     protected $type;
 
     /**
-     * @var \Rougin\Ezekiel\Update
+     * @var \Rougin\Ezekiel\Query\Update
      */
     protected $update;
+
+    /**
+     * Converts snake_case methods to camelCase.
+     *
+     * @param string  $method
+     * @param mixed[] $arguments
+     *
+     * @return mixed
+     */
+    public function __call($method, $arguments)
+    {
+        $parts = str_replace('_', ' ', $method);
+
+        $camel = str_replace(' ', '', ucwords($parts));
+
+        $camel = lcfirst($camel);
+
+        if (method_exists($this, $camel))
+        {
+            /** @var callable */
+            $callback = array($this, $camel);
+
+            return call_user_func_array($callback, $arguments);
+        }
+
+        $error = __CLASS__ . '::' . $method . '()';
+
+        throw new \BadMethodCallException($error);
+    }
 
     /**
      * @param \Rougin\Ezekiel\QueryInterface $query
@@ -121,7 +168,7 @@ class Query
      *
      * @param string $key
      *
-     * @return \Rougin\Ezekiel\Having
+     * @return \Rougin\Ezekiel\Query\Having
      */
     public function andHaving($key)
     {
@@ -133,7 +180,7 @@ class Query
      *
      * @param string $key
      *
-     * @return \Rougin\Ezekiel\Order
+     * @return \Rougin\Ezekiel\Query\Order
      */
     public function andOrderBy($key)
     {
@@ -147,11 +194,23 @@ class Query
      *
      * @param string $key
      *
-     * @return \Rougin\Ezekiel\Where
+     * @return \Rougin\Ezekiel\Query\Where
      */
     public function andWhere($key)
     {
         return new Where($this, $key, Where::GROUP_AND);
+    }
+
+    /**
+     * Generates a grouped "AND WHERE" query using a callable.
+     *
+     * @param callable $callback
+     *
+     * @return self
+     */
+    public function andWhereGroup($callback)
+    {
+        return $this->addWhereGroup($callback, Compare::GROUP_AND);
     }
 
     /**
@@ -178,6 +237,21 @@ class Query
     public function getBinds()
     {
         return $this->binds;
+    }
+
+    /**
+     * Returns the current dialect.
+     *
+     * @return \Rougin\Ezekiel\DialectInterface
+     */
+    public function getDialect()
+    {
+        if (! $this->dialect)
+        {
+            return new MysqlDialect;
+        }
+
+        return $this->dialect;
     }
 
     /**
@@ -226,7 +300,7 @@ class Query
      *
      * @param string $key
      *
-     * @return \Rougin\Ezekiel\Having
+     * @return \Rougin\Ezekiel\Query\Having
      */
     public function having($key)
     {
@@ -238,7 +312,7 @@ class Query
      *
      * @param string $table
      *
-     * @return \Rougin\Ezekiel\Join
+     * @return \Rougin\Ezekiel\Query\Join
      */
     public function innerJoin($table)
     {
@@ -250,7 +324,7 @@ class Query
      *
      * @param string $table
      *
-     * @return \Rougin\Ezekiel\Insert
+     * @return \Rougin\Ezekiel\Query\Insert
      */
     public function insertInto($table)
     {
@@ -276,7 +350,7 @@ class Query
      *
      * @param string $table
      *
-     * @return \Rougin\Ezekiel\Join
+     * @return \Rougin\Ezekiel\Query\Join
      */
     public function leftJoin($table)
     {
@@ -305,7 +379,7 @@ class Query
      *
      * @param string $key
      *
-     * @return \Rougin\Ezekiel\Having
+     * @return \Rougin\Ezekiel\Query\Having
      */
     public function orHaving($key)
     {
@@ -317,7 +391,7 @@ class Query
      *
      * @param string $key
      *
-     * @return \Rougin\Ezekiel\Where
+     * @return \Rougin\Ezekiel\Query\Where
      */
     public function orWhere($key)
     {
@@ -325,11 +399,23 @@ class Query
     }
 
     /**
+     * Generates a grouped "OR WHERE" query using a callable.
+     *
+     * @param callable $callback
+     *
+     * @return self
+     */
+    public function orWhereGroup($callback)
+    {
+        return $this->addWhereGroup($callback, Compare::GROUP_OR);
+    }
+
+    /**
      * Generates an "ORDER BY" query.
      *
      * @param string $key
      *
-     * @return \Rougin\Ezekiel\Order
+     * @return \Rougin\Ezekiel\Query\Order
      */
     public function orderBy($key)
     {
@@ -343,7 +429,7 @@ class Query
      *
      * @param string $table
      *
-     * @return \Rougin\Ezekiel\Join
+     * @return \Rougin\Ezekiel\Query\Join
      */
     public function rightJoin($table)
     {
@@ -355,7 +441,7 @@ class Query
      *
      * @param string|string[] $fields
      *
-     * @return \Rougin\Ezekiel\Select
+     * @return \Rougin\Ezekiel\Query\Select
      */
     public function select($fields)
     {
@@ -378,12 +464,28 @@ class Query
     }
 
     /**
+     * Sets the dialect to use for SQL generation.
+     *
+     * @param \Rougin\Ezekiel\DialectInterface $dialect
+     *
+     * @return self
+     */
+    public function setDialect(DialectInterface $dialect)
+    {
+        $this->dialect = $dialect;
+
+        return $this;
+    }
+
+    /**
      * Returns the safe and compiled SQL.
      *
      * @return string
      */
     public function toSql()
     {
+        $dialect = $this->getDialect();
+
         $sql = $this->setSelectSql();
 
         if ($this->type === self::TYPE_INSERT)
@@ -393,7 +495,7 @@ class Query
 
         if ($this->type === self::TYPE_DELETE)
         {
-            $sql = 'DELETE FROM ' . $this->table;
+            $sql = 'DELETE FROM ' . $dialect->quoteIdentifier($this->table);
         }
 
         if ($this->type === self::TYPE_UPDATE)
@@ -407,11 +509,6 @@ class Query
 
         $sql = $this->setCompareSql($sql, self::TYPE_WHERE);
 
-        if ($this->limit > 0)
-        {
-            $sql .= ' LIMIT ' . $this->limit . ', ' . $this->offset;
-        }
-
         if ($this->type === self::TYPE_GROUP)
         {
             $sql .= ' GROUP BY ' . implode(', ', $this->groups);
@@ -420,6 +517,11 @@ class Query
         $sql = $this->setCompareSql($sql, self::TYPE_HAVING);
 
         $sql = $this->setOrderSql($sql);
+
+        if ($this->limit > 0)
+        {
+            $sql .= $dialect->limitClause($this->limit, $this->offset);
+        }
 
         return $sql;
     }
@@ -447,7 +549,7 @@ class Query
      *
      * @param string $key
      *
-     * @return \Rougin\Ezekiel\Where
+     * @return \Rougin\Ezekiel\Query\Where
      */
     public function where($key)
     {
@@ -464,59 +566,6 @@ class Query
     public function whereGroup($callback)
     {
         return $this->addWhereGroup($callback, Compare::GROUP_NONE);
-    }
-
-    /**
-     * Generates a grouped "AND WHERE" query using a callable.
-     *
-     * @param callable $callback
-     *
-     * @return self
-     */
-    public function andWhereGroup($callback)
-    {
-        return $this->addWhereGroup($callback, Compare::GROUP_AND);
-    }
-
-    /**
-     * Generates a grouped "OR WHERE" query using a callable.
-     *
-     * @param callable $callback
-     *
-     * @return self
-     */
-    public function orWhereGroup($callback)
-    {
-        return $this->addWhereGroup($callback, Compare::GROUP_OR);
-    }
-
-    /**
-     * Converts snake_case methods to camelCase.
-     *
-     * @param string $method
-     * @param mixed  $arguments
-     *
-     * @return mixed
-     */
-    public function __call($method, $arguments)
-    {
-        $parts = str_replace('_', ' ', $method);
-
-        $camel = str_replace(' ', '', ucwords($parts));
-
-        $camel = lcfirst($camel);
-
-        if (method_exists($this, $camel))
-        {
-            /** @var callable */
-            $callback = array($this, $camel);
-
-            return call_user_func_array($callback, (array) $arguments);
-        }
-
-        $error = __CLASS__ . '::' . $method . '()';
-
-        throw new \BadMethodCallException($error);
     }
 
     /**

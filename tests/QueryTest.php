@@ -15,9 +15,9 @@ class QueryTest extends Testcase
     public function test_passed_if_delete_from_has_where()
     {
         // Set expected SQL query and its attached data ---
-        $sql = 'DELETE FROM users WHERE name = ?';
+        $sql = 'DELETE FROM `users` WHERE `name` = ?';
 
-        $data = array('name' => 'Royce');
+        $expect = array('name' => 'Royce');
         // ------------------------------------------------
 
         // Check if the actual SQL query matched ---
@@ -34,7 +34,7 @@ class QueryTest extends Testcase
         // Check if the actual bindings matched ---
         $actual = $query->getBinds();
 
-        $this->assertEquals($data, $actual);
+        $this->assertEquals($expect, $actual);
         // ----------------------------------------
     }
 
@@ -43,19 +43,18 @@ class QueryTest extends Testcase
      */
     public function test_passed_if_select_has_group_by()
     {
-        // Set expected SQL query -----------------
-        $sql = 'SELECT * FROM users GROUP BY name';
-        // ----------------------------------------
+        $expect = 'SELECT * FROM `users` GROUP BY name';
 
-        // Check if the actual SQL query matched -----------
+        // Check if the actual SQL query matched ---
         $query = new Query;
 
-        $query->select('*')->from('users')->groupBy('name');
+        $query->select('*')->from('users')
+            ->groupBy('name');
 
         $actual = $query->toSql();
 
-        $this->assertEquals($sql, $actual);
-        // -------------------------------------------------
+        $this->assertEquals($expect, $actual);
+        // -----------------------------------------
     }
 
     /**
@@ -63,13 +62,11 @@ class QueryTest extends Testcase
      */
     public function test_passed_if_select_has_having()
     {
-        // Set expected SQL query and its attached data ------------
-        $sql = 'SELECT * FROM users GROUP BY name, age, date';
+        $sql = 'SELECT * FROM `users` GROUP BY name, age, date';
 
-        $sql = $sql . ' HAVING name = ? AND age > ? OR date = ?';
+        $sql .= ' HAVING `name` = ? AND `age` > ? OR `date` = ?';
 
-        $data = array('name' => 'Royce', 'age' => 5, 'date' => 100);
-        // ---------------------------------------------------------
+        $expect = array('name' => 'Royce', 'age' => 5, 'date' => 100);
 
         // Check if the actual SQL query matched ---
         $query = new Query;
@@ -88,7 +85,7 @@ class QueryTest extends Testcase
         // Check if the actual bindings matched ---
         $actual = $query->getBinds();
 
-        $this->assertEquals($data, $actual);
+        $this->assertEquals($expect, $actual);
         // ----------------------------------------
     }
 
@@ -97,9 +94,7 @@ class QueryTest extends Testcase
      */
     public function test_passed_if_select_has_limit()
     {
-        // Set expected SQL query ----------------
-        $sql = 'SELECT * FROM users LIMIT 100, 0';
-        // ---------------------------------------
+        $expect = 'SELECT * FROM `users` LIMIT 100, 0';
 
         // Check if the actual SQL query matched ------
         $query = new Query;
@@ -108,7 +103,7 @@ class QueryTest extends Testcase
 
         $actual = $query->toSql();
 
-        $this->assertEquals($sql, $actual);
+        $this->assertEquals($expect, $actual);
         // --------------------------------------------
     }
 
@@ -117,9 +112,7 @@ class QueryTest extends Testcase
      */
     public function test_passed_if_select_uses_alias()
     {
-        // Set expected SQL query ------------------------
-        $sql = 'SELECT u.* FROM users u WHERE u.name = ?';
-        // -----------------------------------------------
+        $expect = 'SELECT `u`.* FROM `users` `u` WHERE `u`.`name` = ?';
 
         // Check if the actual SQL query matched ---
         $query = new Query;
@@ -129,7 +122,7 @@ class QueryTest extends Testcase
 
         $actual = $query->toSql();
 
-        $this->assertEquals($sql, $actual);
+        $this->assertEquals($expect, $actual);
         // -----------------------------------------
     }
 
@@ -138,11 +131,9 @@ class QueryTest extends Testcase
      */
     public function test_passed_if_snake_case_method_is_callable()
     {
-        // Set expected SQL query and its attached data ---
-        $sql = 'SELECT * FROM users WHERE name = ?';
+        $sql = 'SELECT * FROM `users` WHERE `name` = ?';
 
-        $data = array('name' => 'Royce');
-        // ------------------------------------------------
+        $expect = array('name' => 'Royce');
 
         // Check if the actual SQL query matched ---
         $query = new Query;
@@ -158,7 +149,7 @@ class QueryTest extends Testcase
         // Check if the actual bindings matched ---
         $actual = $query->get_binds();
 
-        $this->assertEquals($data, $actual);
+        $this->assertEquals($expect, $actual);
         // ----------------------------------------
     }
 
@@ -167,7 +158,7 @@ class QueryTest extends Testcase
      */
     public function test_passed_if_snake_case_rejects_invalid_method()
     {
-        $this->doExpectException('\BadMethodCallException');
+        $this->doExpectException('BadMethodCallException');
 
         $query = new Query;
 

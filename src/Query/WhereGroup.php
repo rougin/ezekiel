@@ -1,6 +1,8 @@
 <?php
 
-namespace Rougin\Ezekiel;
+namespace Rougin\Ezekiel\Query;
+
+use Rougin\Ezekiel\QueryInterface;
 
 /**
  * @package Ezekiel
@@ -28,7 +30,7 @@ class WhereGroup implements QueryInterface
      * @param \Rougin\Ezekiel\Query $inner
      * @param integer               $group
      */
-    public function __construct(Query $inner, $group)
+    public function __construct(\Rougin\Ezekiel\Query $inner, $group)
     {
         $this->group = $group;
 
@@ -36,7 +38,7 @@ class WhereGroup implements QueryInterface
 
         foreach ($inner->getItems() as $item)
         {
-            if ($item->getType() !== Query::TYPE_WHERE)
+            if ($item->getType() !== \Rougin\Ezekiel\Query::TYPE_WHERE)
             {
                 continue;
             }
@@ -63,7 +65,7 @@ class WhereGroup implements QueryInterface
      */
     public function getType()
     {
-        return Query::TYPE_WHERE;
+        return \Rougin\Ezekiel\Query::TYPE_WHERE;
     }
 
     /**

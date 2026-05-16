@@ -266,6 +266,73 @@ $sql = $query->toSql();
 $binds = $query->getBinds();
 ```
 
+## Snake case
+
+All methods can be called in either `camelCase` or `snake_case`:
+
+``` php
+$query = (new Query)
+    ->select(array('u.id', 'u.name'))
+    ->from('users u')
+    ->where('u.name')->like('%winds%')
+    ->order_by('u.created_at')->desc();
+
+$sql = $query->to_sql();
+
+$binds = $query->get_binds();
+```
+
+## Dialects
+
+`Ezekiel` generates SQL that adapts to the database platform. The default dialect is MySQL (`MysqlDialect`). To target a different database, use the `setDialect` method:
+
+``` php
+use Rougin\Ezekiel\Dialect\PgsqlDialect;
+
+$query = (new Query)->setDialect(new PgsqlDialect)
+    ->select('*')->from('users')->limit(10);
+
+// SELECT * FROM "users" LIMIT 10 OFFSET 0
+$sql = $query->toSql();
+```
+
+When using `Result`, the dialect is automatically detected from the `PDO` connection:
+
+``` php
+$pdo = new \PDO('pgsql:host=localhost;dbname=test');
+
+$result = new Result($pdo);
+
+// Dialect is automatically set to PgsqlDialect on the Query
+$items = $result->items($query);
+```
+
+To create a custom dialect, implement the class in `DialectInterface` or by extending it to `AbstractDialect`:
+
+``` php
+use Rougin\Ezekiel\Dialect\AbstractDialect;
+
+class OracleDialect extends AbstractDialect
+{
+    public function getQuoteChar()
+    {
+        return '"';
+    }
+
+    public function limitClause($limit, $offset)
+    {
+        return '';
+    }
+
+    public function name()
+    {
+        return 'oracle';
+    }
+}
+```
+
+Available built-in dialects for `Ezekiel` include `MysqlDialect`, `PgsqlDialect`, `SqliteDialect`, and `MssqlDialect`.
+
 ## Renaming from `Windstorm`
 
 As being renamed from `Windstorm`, this will introduce [backward compatibility](https://en.wikipedia.org/wiki/Backward_compatibility) (BC) breaks through out the source code. This was done to increase extensibility, simplicity and maintainbility and was discussed in one of [my blog post](https://roug.in/hello-world-again/) which aims to solve overengineering of my own open source packages:

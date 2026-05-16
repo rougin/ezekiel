@@ -1,6 +1,8 @@
 <?php
 
-namespace Rougin\Ezekiel;
+namespace Rougin\Ezekiel\Query;
+
+use Rougin\Ezekiel\QueryInterface;
 
 /**
  * @package Ezekiel
@@ -50,7 +52,7 @@ class Compare implements QueryInterface
      * @param string                $key
      * @param integer               $group
      */
-    public function __construct(Query $query, $key, $group = self::GROUP_NONE)
+    public function __construct(\Rougin\Ezekiel\Query $query, $key, $group = self::GROUP_NONE)
     {
         $this->query = $query;
 
@@ -312,6 +314,8 @@ class Compare implements QueryInterface
      */
     protected function setSql($key, $symbol, $value = '?')
     {
+        $dialect = $this->query->getDialect();
+
         $group = '';
 
         if ($this->group === self::GROUP_AND)
@@ -326,10 +330,12 @@ class Compare implements QueryInterface
 
         $type = 'WHERE';
 
-        if ($this->type === Query::TYPE_HAVING)
+        if ($this->type === \Rougin\Ezekiel\Query::TYPE_HAVING)
         {
             $type = 'HAVING';
         }
+
+        $key = $dialect->quoteIdentifier($key);
 
         $sql = $type . ' ' . $group . $key . ' ';
 

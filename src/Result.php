@@ -10,6 +10,11 @@ namespace Rougin\Ezekiel;
 class Result
 {
     /**
+     * @var \Rougin\Ezekiel\DialectInterface
+     */
+    protected $dialect;
+
+    /**
      * @var \PDO
      */
     protected $pdo;
@@ -19,6 +24,8 @@ class Result
      */
     public function __construct(\PDO $pdo)
     {
+        $this->dialect = Dialect::fromPdo($pdo);
+
         $this->pdo = $pdo;
     }
 
@@ -74,6 +81,8 @@ class Result
      */
     protected function execute(Query $query)
     {
+        $query->setDialect($this->dialect);
+
         $sql = $query->toSql();
 
         $stmt = $this->pdo->prepare($sql);

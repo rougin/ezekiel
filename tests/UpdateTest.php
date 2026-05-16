@@ -14,11 +14,9 @@ class UpdateTest extends Testcase
      */
     public function test_passed_if_update_uses_set()
     {
-        // Set expected SQL query and its attached data ---------
-        $sql = 'UPDATE users SET name = ?, age = ? WHERE id = ?';
+        $sql = 'UPDATE `users` SET `name` = ?, `age` = ? WHERE `id` = ?';
 
-        $data = array('name' => 'Royce', 'age' => 30, 'id' => 1);
-        // ------------------------------------------------------
+        $expect = array('name' => 'Royce', 'age' => 30, 'id' => 1);
 
         // Check if the actual SQL query matched ---
         $query = new Query;
@@ -36,7 +34,7 @@ class UpdateTest extends Testcase
         // Check if the actual bindings matched ---
         $actual = $query->getBinds();
 
-        $this->assertEquals($data, $actual);
+        $this->assertEquals($expect, $actual);
         // ----------------------------------------
     }
 }

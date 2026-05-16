@@ -1,6 +1,8 @@
 <?php
 
-namespace Rougin\Ezekiel;
+namespace Rougin\Ezekiel\Query;
+
+use Rougin\Ezekiel\QueryInterface;
 
 /**
  * @package Ezekiel
@@ -22,7 +24,7 @@ class Insert implements QueryInterface
     /**
      * @param \Rougin\Ezekiel\Query $query
      */
-    public function __construct(Query $query)
+    public function __construct(\Rougin\Ezekiel\Query $query)
     {
         $this->query = $query;
     }
@@ -44,7 +46,7 @@ class Insert implements QueryInterface
      */
     public function getType()
     {
-        return Query::TYPE_INSERT;
+        return \Rougin\Ezekiel\Query::TYPE_INSERT;
     }
 
     /**
@@ -60,19 +62,30 @@ class Insert implements QueryInterface
      */
     public function toSql()
     {
+        $dialect = $this->query->getDialect();
+
         // Create placeholders for all values ------------
         $items = array_fill(0, count($this->values), '?');
 
         $values = '(' . implode(', ', $items) . ')';
         // -----------------------------------------------
 
-        // Extract specified fields -------------
-        $keys = array_keys($this->values);
+        // Extract specified fields ------------------
+        $keys = array();
+
+        foreach (array_keys($this->values) as $key)
+        {
+            $keys[] = $dialect->quoteIdentifier($key);
+        }
 
         $keys = '(' . implode(', ', $keys) . ')';
-        // --------------------------------------
+        // -------------------------------------------
 
-        $sql = 'INSERT INTO ' . $this->query->getTable();
+        $table = $this->query->getTable();
+
+        $table = $dialect->quoteIdentifier($table);
+
+        $sql = 'INSERT INTO ' . $table;
 
         return $sql . ' ' . $keys . ' VALUES ' . $values;
     }

@@ -1,6 +1,8 @@
 <?php
 
-namespace Rougin\Ezekiel;
+namespace Rougin\Ezekiel\Query;
+
+use Rougin\Ezekiel\QueryInterface;
 
 /**
  * @package Ezekiel
@@ -33,7 +35,7 @@ class Select implements QueryInterface
      * @param \Rougin\Ezekiel\Query $query
      * @param string|string[]       $fields
      */
-    public function __construct(Query $query, $fields)
+    public function __construct(\Rougin\Ezekiel\Query $query, $fields)
     {
         if (is_string($fields))
         {
@@ -62,7 +64,7 @@ class Select implements QueryInterface
      */
     public function getType()
     {
-        return Query::TYPE_SELECT;
+        return \Rougin\Ezekiel\Query::TYPE_SELECT;
     }
 
     /**
@@ -70,10 +72,37 @@ class Select implements QueryInterface
      */
     public function toSql()
     {
-        $sql = 'SELECT ' . implode(', ', $this->fields);
+        $dialect = $this->query->getDialect();
+
+        $fields = array();
+
+        foreach ($this->fields as $field)
+        {
+            if (strpos($field, ',') === false)
+            {
+                $fields[] = $dialect->quoteIdentifier($field);
+
+                continue;
+            }
+
+            $parts = array_map('trim', explode(',', $field));
+
+            $keys = array();
+
+            foreach ($parts as $part)
+            {
+                $keys[] = $dialect->quoteIdentifier($part);
+            }
+
+            $fields[] = implode(', ', $keys);
+        }
+
+        $sql = 'SELECT ' . implode(', ', $fields);
 
         $alias = $this->alias ? ' ' . $this->alias : '';
 
-        return $sql . ' FROM ' . $this->table . $alias;
+        $table = $dialect->quoteIdentifier($this->table);
+
+        return $sql . ' FROM ' . $table . $alias;
     }
 }

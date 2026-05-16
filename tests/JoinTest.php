@@ -14,11 +14,9 @@ class JoinTest extends Testcase
      */
     public function test_passed_if_join_uses_inner()
     {
-        // Set expected SQL query ------------------------
-        $sql = 'SELECT u.* FROM users u';
+        $expect = 'SELECT `u`.* FROM `users` `u`';
 
-        $sql .= ' INNER JOIN posts p ON p.user_id = u.id';
-        // -----------------------------------------------
+        $expect .= ' INNER JOIN `posts` `p` ON `p`.`user_id` = `u`.`id`';
 
         // Check if the actual SQL query matched ---
         $query = new Query;
@@ -29,7 +27,7 @@ class JoinTest extends Testcase
 
         $actual = $query->toSql();
 
-        $this->assertEquals($sql, $actual);
+        $this->assertEquals($expect, $actual);
         // -----------------------------------------
     }
 
@@ -38,11 +36,9 @@ class JoinTest extends Testcase
      */
     public function test_passed_if_join_uses_left()
     {
-        // Set expected SQL query -----------------------
-        $sql = 'SELECT u.* FROM users u';
+        $expect = 'SELECT `u`.* FROM `users` `u`';
 
-        $sql .= ' LEFT JOIN posts p ON p.user_id = u.id';
-        // ----------------------------------------------
+        $expect .= ' LEFT JOIN `posts` `p` ON `p`.`user_id` = `u`.`id`';
 
         // Check if the actual SQL query matched ---
         $query = new Query;
@@ -53,7 +49,7 @@ class JoinTest extends Testcase
 
         $actual = $query->toSql();
 
-        $this->assertEquals($sql, $actual);
+        $this->assertEquals($expect, $actual);
         // -----------------------------------------
     }
 
@@ -62,11 +58,9 @@ class JoinTest extends Testcase
      */
     public function test_passed_if_join_uses_right()
     {
-        // Set expected SQL query ------------------------
-        $sql = 'SELECT u.* FROM users u';
+        $expect = 'SELECT `u`.* FROM `users` `u`';
 
-        $sql .= ' RIGHT JOIN posts p ON p.user_id = u.id';
-        // -----------------------------------------------
+        $expect .= ' RIGHT JOIN `posts` `p` ON `p`.`user_id` = `u`.`id`';
 
         // Check if the actual SQL query matched ---
         $query = new Query;
@@ -77,7 +71,7 @@ class JoinTest extends Testcase
 
         $actual = $query->toSql();
 
-        $this->assertEquals($sql, $actual);
+        $this->assertEquals($expect, $actual);
         // -----------------------------------------
     }
 }

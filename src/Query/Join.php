@@ -1,6 +1,8 @@
 <?php
 
-namespace Rougin\Ezekiel;
+namespace Rougin\Ezekiel\Query;
+
+use Rougin\Ezekiel\QueryInterface;
 
 /**
  * @package Ezekiel
@@ -45,7 +47,7 @@ class Join implements QueryInterface
      * @param string                $table
      * @param integer               $type
      */
-    public function __construct(Query $query, $table, $type = self::TYPE_INNER)
+    public function __construct(\Rougin\Ezekiel\Query $query, $table, $type = self::TYPE_INNER)
     {
         $this->query = $query;
 
@@ -59,7 +61,7 @@ class Join implements QueryInterface
      */
     public function getType()
     {
-        return Query::TYPE_JOIN;
+        return \Rougin\Ezekiel\Query::TYPE_JOIN;
     }
 
     /**
@@ -82,6 +84,8 @@ class Join implements QueryInterface
      */
     public function toSql()
     {
+        $dialect = $this->query->getDialect();
+
         $join = 'INNER JOIN';
 
         if ($this->type === self::TYPE_LEFT)
@@ -91,10 +95,21 @@ class Join implements QueryInterface
 
         if ($this->type === self::TYPE_RIGHT)
         {
-            $join = 'RIGHT JOIN';
+            $join = 'LEFT JOIN';
+
+            if ($dialect->supportsRightJoin())
+            {
+                $join = 'RIGHT JOIN';
+            }
         }
 
-        $sql = sprintf('%s %s ON %s = %s', $join, $this->table, $this->local, $this->foreign);
+        $table = $dialect->quoteIdentifier($this->table);
+
+        $local = $dialect->quoteIdentifier($this->local);
+
+        $foreign = $dialect->quoteIdentifier($this->foreign);
+
+        $sql = sprintf('%s %s ON %s = %s', $join, $table, $local, $foreign);
 
         return $sql;
     }

@@ -1,6 +1,8 @@
 <?php
 
-namespace Rougin\Ezekiel;
+namespace Rougin\Ezekiel\Query;
+
+use Rougin\Ezekiel\QueryInterface;
 
 /**
  * @package Ezekiel
@@ -32,7 +34,7 @@ class Order implements QueryInterface
      * @param \Rougin\Ezekiel\Query $query
      * @param string                $key
      */
-    public function __construct(Query $query, $key)
+    public function __construct(\Rougin\Ezekiel\Query $query, $key)
     {
         $this->key = $key;
 
@@ -64,7 +66,7 @@ class Order implements QueryInterface
      */
     public function getType()
     {
-        return Query::TYPE_ORDER;
+        return \Rougin\Ezekiel\Query::TYPE_ORDER;
     }
 
     /**
@@ -72,8 +74,17 @@ class Order implements QueryInterface
      */
     public function toSql()
     {
-        $sort = $this->sort === self::SORT_ASC ? 'ASC' : 'DESC';
+        $dialect = $this->query->getDialect();
 
-        return 'ORDER BY ' . $this->key . ' ' . $sort;
+        $sort = 'DESC';
+
+        if ($this->sort === self::SORT_ASC)
+        {
+            $sort = 'ASC';
+        }
+
+        $key = $dialect->quoteIdentifier($this->key);
+
+        return 'ORDER BY ' . $key . ' ' . $sort;
     }
 }
