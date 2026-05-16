@@ -10,6 +10,14 @@ namespace Rougin\Ezekiel\Dialect;
 abstract class AbstractDialect implements \Rougin\Ezekiel\DialectInterface
 {
     /**
+     * @return boolean
+     */
+    public function canRightJoin()
+    {
+        return true;
+    }
+
+    /**
      * Returns the quoting character (e.g., "`", "\"", "[").
      *
      * @return string
@@ -17,22 +25,11 @@ abstract class AbstractDialect implements \Rougin\Ezekiel\DialectInterface
     abstract public function getQuoteChar();
 
     /**
-     * @param integer $limit
-     * @param integer $offset
-     *
-     * @return string
-     */
-    public function limitClause($limit, $offset)
-    {
-        return ' LIMIT ' . $limit . ', ' . $offset;
-    }
-
-    /**
      * @param string $name
      *
      * @return string
      */
-    public function quoteIdentifier($name)
+    public function quote($name)
     {
         $char = $this->getQuoteChar();
 
@@ -102,10 +99,13 @@ abstract class AbstractDialect implements \Rougin\Ezekiel\DialectInterface
     }
 
     /**
-     * @return boolean
+     * @param integer $limit
+     * @param integer $offset
+     *
+     * @return string
      */
-    public function supportsRightJoin()
+    public function toLimit($limit, $offset)
     {
-        return true;
+        return ' LIMIT ' . $limit . ', ' . $offset;
     }
 }

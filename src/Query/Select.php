@@ -80,7 +80,7 @@ class Select implements QueryInterface
         {
             if (strpos($field, ',') === false)
             {
-                $fields[] = $dialect->quoteIdentifier($field);
+                $fields[] = $dialect->quote($field);
 
                 continue;
             }
@@ -91,7 +91,7 @@ class Select implements QueryInterface
 
             foreach ($parts as $part)
             {
-                $keys[] = $dialect->quoteIdentifier($part);
+                $keys[] = $dialect->quote($part);
             }
 
             $fields[] = implode(', ', $keys);
@@ -101,7 +101,7 @@ class Select implements QueryInterface
 
         $alias = $this->alias ? ' ' . $this->alias : '';
 
-        $table = $dialect->quoteIdentifier($this->table);
+        $table = $dialect->quote($this->table);
 
         return $sql . ' FROM ' . $table . $alias;
     }

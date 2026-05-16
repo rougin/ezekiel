@@ -83,7 +83,7 @@ class Order implements QueryInterface
             $sort = 'ASC';
         }
 
-        $key = $dialect->quoteIdentifier($this->key);
+        $key = $dialect->quote($this->key);
 
         return 'ORDER BY ' . $key . ' ' . $sort;
     }

@@ -126,11 +126,11 @@ class Query
      * Converts snake_case methods to camelCase.
      *
      * @param string  $method
-     * @param mixed[] $arguments
+     * @param mixed[] $args
      *
      * @return mixed
      */
-    public function __call($method, $arguments)
+    public function __call($method, $args)
     {
         $parts = str_replace('_', ' ', $method);
 
@@ -143,7 +143,7 @@ class Query
             /** @var callable */
             $callback = array($this, $camel);
 
-            return call_user_func_array($callback, $arguments);
+            return call_user_func_array($callback, $args);
         }
 
         $error = __CLASS__ . '::' . $method . '()';
@@ -495,7 +495,7 @@ class Query
 
         if ($this->type === self::TYPE_DELETE)
         {
-            $sql = 'DELETE FROM ' . $dialect->quoteIdentifier($this->table);
+            $sql = 'DELETE FROM ' . $dialect->quote($this->table);
         }
 
         if ($this->type === self::TYPE_UPDATE)
@@ -520,7 +520,7 @@ class Query
 
         if ($this->limit > 0)
         {
-            $sql .= $dialect->limitClause($this->limit, $this->offset);
+            $sql .= $dialect->toLimit($this->limit, $this->offset);
         }
 
         return $sql;

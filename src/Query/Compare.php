@@ -335,7 +335,7 @@ class Compare implements QueryInterface
             $type = 'HAVING';
         }
 
-        $key = $dialect->quoteIdentifier($key);
+        $key = $dialect->quote($key);
 
         $sql = $type . ' ' . $group . $key . ' ';
 

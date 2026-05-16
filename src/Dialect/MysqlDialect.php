@@ -12,16 +12,16 @@ class MysqlDialect extends AbstractDialect
     /**
      * @return string
      */
-    public function getQuoteChar()
+    public function getName()
     {
-        return '`';
+        return 'mysql';
     }
 
     /**
      * @return string
      */
-    public function name()
+    public function getQuoteChar()
     {
-        return 'mysql';
+        return '`';
     }
 }

@@ -30,18 +30,6 @@ class Insert implements QueryInterface
     }
 
     /**
-     * @param array<string, mixed> $values
-     *
-     * @return \Rougin\Ezekiel\Query
-     */
-    public function values($values)
-    {
-        $this->values = $values;
-
-        return $this->query->addItem($this);
-    }
-
-    /**
      * @return integer
      */
     public function getType()
@@ -75,7 +63,7 @@ class Insert implements QueryInterface
 
         foreach (array_keys($this->values) as $key)
         {
-            $keys[] = $dialect->quoteIdentifier($key);
+            $keys[] = $dialect->quote($key);
         }
 
         $keys = '(' . implode(', ', $keys) . ')';
@@ -83,10 +71,22 @@ class Insert implements QueryInterface
 
         $table = $this->query->getTable();
 
-        $table = $dialect->quoteIdentifier($table);
+        $table = $dialect->quote($table);
 
         $sql = 'INSERT INTO ' . $table;
 
         return $sql . ' ' . $keys . ' VALUES ' . $values;
+    }
+
+    /**
+     * @param array<string, mixed> $values
+     *
+     * @return \Rougin\Ezekiel\Query
+     */
+    public function values($values)
+    {
+        $this->values = $values;
+
+        return $this->query->addItem($this);
     }
 }

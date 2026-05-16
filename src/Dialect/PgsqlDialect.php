@@ -12,6 +12,14 @@ class PgsqlDialect extends AbstractDialect
     /**
      * @return string
      */
+    public function getName()
+    {
+        return 'pgsql';
+    }
+
+    /**
+     * @return string
+     */
     public function getQuoteChar()
     {
         return '"';
@@ -23,16 +31,8 @@ class PgsqlDialect extends AbstractDialect
      *
      * @return string
      */
-    public function limitClause($limit, $offset)
+    public function toLimit($limit, $offset)
     {
         return ' LIMIT ' . $limit . ' OFFSET ' . $offset;
-    }
-
-    /**
-     * @return string
-     */
-    public function name()
-    {
-        return 'pgsql';
     }
 }

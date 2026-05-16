@@ -97,17 +97,17 @@ class Join implements QueryInterface
         {
             $join = 'LEFT JOIN';
 
-            if ($dialect->supportsRightJoin())
+            if ($dialect->canRightJoin())
             {
                 $join = 'RIGHT JOIN';
             }
         }
 
-        $table = $dialect->quoteIdentifier($this->table);
+        $table = $dialect->quote($this->table);
 
-        $local = $dialect->quoteIdentifier($this->local);
+        $local = $dialect->quote($this->local);
 
-        $foreign = $dialect->quoteIdentifier($this->foreign);
+        $foreign = $dialect->quote($this->foreign);
 
         $sql = sprintf('%s %s ON %s = %s', $join, $table, $local, $foreign);
 

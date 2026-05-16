@@ -12,28 +12,17 @@ class MssqlDialect extends AbstractDialect
     /**
      * @return string
      */
+    public function getName()
+    {
+        return 'mssql';
+    }
+
+    /**
+     * @return string
+     */
     public function getQuoteChar()
     {
         return '[';
-    }
-
-    /**
-     * @param integer $limit
-     * @param integer $offset
-     *
-     * @return string
-     */
-    public function limitClause($limit, $offset)
-    {
-        return ' OFFSET ' . $offset . ' ROWS FETCH NEXT ' . $limit . ' ROWS ONLY';
-    }
-
-    /**
-     * @return string
-     */
-    public function name()
-    {
-        return 'mssql';
     }
 
     /**
@@ -41,7 +30,7 @@ class MssqlDialect extends AbstractDialect
      *
      * @return string
      */
-    public function quoteIdentifier($name)
+    public function quote($name)
     {
         if (strlen($name) > 0 && $name[0] === '[')
         {
@@ -106,5 +95,16 @@ class MssqlDialect extends AbstractDialect
         }
 
         return '[' . $name . ']';
+    }
+
+    /**
+     * @param integer $limit
+     * @param integer $offset
+     *
+     * @return string
+     */
+    public function toLimit($limit, $offset)
+    {
+        return ' OFFSET ' . $offset . ' ROWS FETCH NEXT ' . $limit . ' ROWS ONLY';
     }
 }

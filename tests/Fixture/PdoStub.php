@@ -32,11 +32,10 @@ class PdoStub extends \PDO
     #[\ReturnTypeWillChange]
     public function getAttribute($attribute)
     {
-        if ($attribute === \PDO::ATTR_DRIVER_NAME)
-        {
-            return $this->driver;
-        }
+        $value = parent::getAttribute($attribute);
 
-        return parent::getAttribute($attribute);
+        $isDriver = $attribute === \PDO::ATTR_DRIVER_NAME;
+
+        return $isDriver ? $this->driver : $value;
     }
 }

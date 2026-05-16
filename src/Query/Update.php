@@ -59,10 +59,10 @@ class Update
 
         foreach ($this->values as $name => $value)
         {
-            $items[] = $dialect->quoteIdentifier($name) . ' = ?';
+            $items[] = $dialect->quote($name) . ' = ?';
         }
 
-        $table = $dialect->quoteIdentifier($this->query->getTable());
+        $table = $dialect->quote($this->query->getTable());
 
         $keys = implode(', ', $items);
 

@@ -10,6 +10,22 @@ namespace Rougin\Ezekiel\Dialect;
 class SqliteDialect extends AbstractDialect
 {
     /**
+     * @return boolean
+     */
+    public function canRightJoin()
+    {
+        return false;
+    }
+
+    /**
+     * @return string
+     */
+    public function getName()
+    {
+        return 'sqlite';
+    }
+
+    /**
      * @return string
      */
     public function getQuoteChar()
@@ -23,24 +39,8 @@ class SqliteDialect extends AbstractDialect
      *
      * @return string
      */
-    public function limitClause($limit, $offset)
+    public function toLimit($limit, $offset)
     {
         return ' LIMIT ' . $limit . ' OFFSET ' . $offset;
-    }
-
-    /**
-     * @return string
-     */
-    public function name()
-    {
-        return 'sqlite';
-    }
-
-    /**
-     * @return boolean
-     */
-    public function supportsRightJoin()
-    {
-        return false;
     }
 }

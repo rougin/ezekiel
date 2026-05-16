@@ -94,7 +94,7 @@ class DialectTest extends Testcase
 
         $expect = '*';
 
-        $actual = $dialect->quoteIdentifier('*');
+        $actual = $dialect->quote('*');
 
         $this->assertEquals($expect, $actual);
     }
@@ -108,7 +108,7 @@ class DialectTest extends Testcase
 
         $expect = ' OFFSET 5 ROWS FETCH NEXT 10 ROWS ONLY';
 
-        $actual = $dialect->limitClause(10, 5);
+        $actual = $dialect->toLimit(10, 5);
 
         $this->assertEquals($expect, $actual);
     }
@@ -120,7 +120,7 @@ class DialectTest extends Testcase
     {
         $dialect = new MssqlDialect;
 
-        $this->assertEquals('mssql', $dialect->name());
+        $this->assertEquals('mssql', $dialect->getName());
     }
 
     /**
@@ -132,7 +132,7 @@ class DialectTest extends Testcase
 
         $expect = '[users] [u]';
 
-        $actual = $dialect->quoteIdentifier('users u');
+        $actual = $dialect->quote('users u');
 
         $this->assertEquals($expect, $actual);
     }
@@ -146,7 +146,7 @@ class DialectTest extends Testcase
 
         $expect = '[users]';
 
-        $actual = $dialect->quoteIdentifier('users');
+        $actual = $dialect->quote('users');
 
         $this->assertEquals($expect, $actual);
     }
@@ -160,7 +160,7 @@ class DialectTest extends Testcase
 
         $expect = '[u].[name]';
 
-        $actual = $dialect->quoteIdentifier('u.name');
+        $actual = $dialect->quote('u.name');
 
         $this->assertEquals($expect, $actual);
     }
@@ -168,7 +168,7 @@ class DialectTest extends Testcase
     /**
      * @return void
      */
-    public function test_passed_if_mssql_get_quote_char_returns_bracket()
+    public function test_passed_if_mssql_quote_char_is_bracket()
     {
         $dialect = new MssqlDialect;
 
@@ -186,7 +186,7 @@ class DialectTest extends Testcase
 
         $expect = '[users] AS [u]';
 
-        $actual = $dialect->quoteIdentifier('users AS u');
+        $actual = $dialect->quote('users AS u');
 
         $this->assertEquals($expect, $actual);
     }
@@ -200,7 +200,7 @@ class DialectTest extends Testcase
 
         $expect = '[table]';
 
-        $actual = $dialect->quoteIdentifier('[table]');
+        $actual = $dialect->quote('[table]');
 
         $this->assertEquals($expect, $actual);
     }
@@ -214,7 +214,7 @@ class DialectTest extends Testcase
 
         $expect = 'COUNT(*)';
 
-        $actual = $dialect->quoteIdentifier('COUNT(*)');
+        $actual = $dialect->quote('COUNT(*)');
 
         $this->assertEquals($expect, $actual);
     }
@@ -228,7 +228,7 @@ class DialectTest extends Testcase
 
         $expect = '1';
 
-        $actual = $dialect->quoteIdentifier('1');
+        $actual = $dialect->quote('1');
 
         $this->assertEquals($expect, $actual);
     }
@@ -240,7 +240,7 @@ class DialectTest extends Testcase
     {
         $dialect = new MssqlDialect;
 
-        $this->assertTrue($dialect->supportsRightJoin());
+        $this->assertTrue($dialect->canRightJoin());
     }
 
     /**
@@ -252,7 +252,7 @@ class DialectTest extends Testcase
 
         $expect = '1';
 
-        $actual = $dialect->quoteIdentifier('1');
+        $actual = $dialect->quote('1');
 
         $this->assertEquals($expect, $actual);
     }
@@ -266,7 +266,7 @@ class DialectTest extends Testcase
 
         $expect = '`u`.*';
 
-        $actual = $dialect->quoteIdentifier('u.*');
+        $actual = $dialect->quote('u.*');
 
         $this->assertEquals($expect, $actual);
     }
@@ -280,7 +280,7 @@ class DialectTest extends Testcase
 
         $expect = ' LIMIT 10, 5';
 
-        $actual = $dialect->limitClause(10, 5);
+        $actual = $dialect->toLimit(10, 5);
 
         $this->assertEquals($expect, $actual);
     }
@@ -292,7 +292,7 @@ class DialectTest extends Testcase
     {
         $dialect = new MysqlDialect;
 
-        $this->assertEquals('mysql', $dialect->name());
+        $this->assertEquals('mysql', $dialect->getName());
     }
 
     /**
@@ -304,7 +304,7 @@ class DialectTest extends Testcase
 
         $expect = '`users` `u`';
 
-        $actual = $dialect->quoteIdentifier('users u');
+        $actual = $dialect->quote('users u');
 
         $this->assertEquals($expect, $actual);
     }
@@ -318,7 +318,7 @@ class DialectTest extends Testcase
 
         $expect = '`users`';
 
-        $actual = $dialect->quoteIdentifier('users');
+        $actual = $dialect->quote('users');
 
         $this->assertEquals($expect, $actual);
     }
@@ -332,7 +332,7 @@ class DialectTest extends Testcase
 
         $expect = '`u`.`name`';
 
-        $actual = $dialect->quoteIdentifier('u.name');
+        $actual = $dialect->quote('u.name');
 
         $this->assertEquals($expect, $actual);
     }
@@ -346,7 +346,7 @@ class DialectTest extends Testcase
 
         $expect = '`users` AS `u`';
 
-        $actual = $dialect->quoteIdentifier('users AS u');
+        $actual = $dialect->quote('users AS u');
 
         $this->assertEquals($expect, $actual);
     }
@@ -360,7 +360,7 @@ class DialectTest extends Testcase
 
         $expect = 'COUNT(*)';
 
-        $actual = $dialect->quoteIdentifier('COUNT(*)');
+        $actual = $dialect->quote('COUNT(*)');
 
         $this->assertEquals($expect, $actual);
     }
@@ -374,7 +374,7 @@ class DialectTest extends Testcase
 
         $expect = '`table`';
 
-        $actual = $dialect->quoteIdentifier('`table`');
+        $actual = $dialect->quote('`table`');
 
         $this->assertEquals($expect, $actual);
     }
@@ -386,7 +386,7 @@ class DialectTest extends Testcase
     {
         $dialect = new MysqlDialect;
 
-        $this->assertTrue($dialect->supportsRightJoin());
+        $this->assertTrue($dialect->canRightJoin());
     }
 
     /**
@@ -398,7 +398,7 @@ class DialectTest extends Testcase
 
         $expect = ' LIMIT 10 OFFSET 5';
 
-        $actual = $dialect->limitClause(10, 5);
+        $actual = $dialect->toLimit(10, 5);
 
         $this->assertEquals($expect, $actual);
     }
@@ -410,7 +410,7 @@ class DialectTest extends Testcase
     {
         $dialect = new PgsqlDialect;
 
-        $this->assertEquals('pgsql', $dialect->name());
+        $this->assertEquals('pgsql', $dialect->getName());
     }
 
     /**
@@ -422,7 +422,7 @@ class DialectTest extends Testcase
 
         $expect = '"users"';
 
-        $actual = $dialect->quoteIdentifier('users');
+        $actual = $dialect->quote('users');
 
         $this->assertEquals($expect, $actual);
     }
@@ -436,7 +436,7 @@ class DialectTest extends Testcase
 
         $expect = '"u"."name"';
 
-        $actual = $dialect->quoteIdentifier('u.name');
+        $actual = $dialect->quote('u.name');
 
         $this->assertEquals($expect, $actual);
     }
@@ -448,7 +448,7 @@ class DialectTest extends Testcase
     {
         $dialect = new PgsqlDialect;
 
-        $this->assertTrue($dialect->supportsRightJoin());
+        $this->assertTrue($dialect->canRightJoin());
     }
 
     /**
@@ -506,7 +506,7 @@ class DialectTest extends Testcase
 
         $expect = ' LIMIT 10 OFFSET 5';
 
-        $actual = $dialect->limitClause(10, 5);
+        $actual = $dialect->toLimit(10, 5);
 
         $this->assertEquals($expect, $actual);
     }
@@ -518,7 +518,7 @@ class DialectTest extends Testcase
     {
         $dialect = new SqliteDialect;
 
-        $this->assertEquals('sqlite', $dialect->name());
+        $this->assertEquals('sqlite', $dialect->getName());
     }
 
     /**
@@ -530,7 +530,7 @@ class DialectTest extends Testcase
 
         $expect = '"users"';
 
-        $actual = $dialect->quoteIdentifier('users');
+        $actual = $dialect->quote('users');
 
         $this->assertEquals($expect, $actual);
     }
@@ -542,13 +542,13 @@ class DialectTest extends Testcase
     {
         $dialect = new SqliteDialect;
 
-        $this->assertFalse($dialect->supportsRightJoin());
+        $this->assertFalse($dialect->canRightJoin());
     }
 
     /**
      * @return void
      */
-    public function test_passed_if_sqlite_right_join_falls_back_to_left()
+    public function test_passed_if_sqlite_right_join_falls_back()
     {
         $query = new Query;
 
