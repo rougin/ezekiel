@@ -44,7 +44,7 @@ class Compare implements QueryInterface
     protected $type;
 
     /**
-     * @var array<string, mixed>
+     * @var mixed[]
      */
     protected $values = array();
 
@@ -84,6 +84,23 @@ class Compare implements QueryInterface
     }
 
     /**
+     * Generates a BETWEEN query comparison.
+     *
+     * @param mixed $min
+     * @param mixed $max
+     *
+     * @return \Rougin\Ezekiel\Query
+     */
+    public function between($min, $max)
+    {
+        $this->sql = $this->setSql($this->key, 'BETWEEN', '? AND ?');
+
+        $this->values[$this->key] = array($min, $max);
+
+        return $this->query->addItem($this);
+    }
+
+    /**
      * Generates an equality comparison.
      *
      * @param mixed $value
@@ -104,7 +121,7 @@ class Compare implements QueryInterface
     }
 
     /**
-     * @return array<string, mixed>
+     * @return mixed[]
      */
     public function getValues()
     {
@@ -138,12 +155,17 @@ class Compare implements QueryInterface
     /**
      * Generates an "IN ()" query comparison.
      *
-     * @param mixed[] $values
+     * @param \Rougin\Ezekiel\Query|mixed[] $values
      *
      * @return \Rougin\Ezekiel\Query
      */
     public function in($values)
     {
+        if ($values instanceof Query)
+        {
+            return $this->compareSubquery($values, 'IN');
+        }
+
         return $this->compareIn($values, 'IN');
     }
 
@@ -224,6 +246,23 @@ class Compare implements QueryInterface
     }
 
     /**
+     * Generates a NOT BETWEEN query comparison.
+     *
+     * @param mixed $min
+     * @param mixed $max
+     *
+     * @return \Rougin\Ezekiel\Query
+     */
+    public function notBetween($min, $max)
+    {
+        $this->sql = $this->setSql($this->key, 'NOT BETWEEN', '? AND ?');
+
+        $this->values[$this->key] = array($min, $max);
+
+        return $this->query->addItem($this);
+    }
+
+    /**
      * Generates an non-equality comparison.
      *
      * @param mixed $value
@@ -238,12 +277,17 @@ class Compare implements QueryInterface
     /**
      * Generates an "NOT IN ()" query comparison.
      *
-     * @param mixed[] $values
+     * @param \Rougin\Ezekiel\Query|mixed[] $values
      *
      * @return \Rougin\Ezekiel\Query
      */
     public function notIn($values)
     {
+        if ($values instanceof Query)
+        {
+            return $this->compareSubquery($values, 'NOT IN');
+        }
+
         return $this->compareIn($values, 'NOT IN');
     }
 
@@ -313,6 +357,25 @@ class Compare implements QueryInterface
     }
 
     /**
+     * @param \Rougin\Ezekiel\Query $sub
+     * @param string                $symbol
+     *
+     * @return \Rougin\Ezekiel\Query
+     */
+    protected function compareSubquery(Query $sub, $symbol)
+    {
+        $subSql = '(' . $sub->toSql() . ')';
+
+        $this->sql = $this->setSql($this->key, $symbol, $subSql);
+
+        $subBinds = $sub->getBinds();
+
+        $this->values = array_merge($this->values, $subBinds);
+
+        return $this->query->addItem($this);
+    }
+
+    /**
      * @param string $symbol
      * @param mixed  $value
      *
@@ -320,9 +383,22 @@ class Compare implements QueryInterface
      */
     protected function compareWith($symbol, $value)
     {
-        $this->sql = $this->setSql($this->key, $symbol);
+        if (! $value instanceof Query)
+        {
+            $this->sql = $this->setSql($this->key, $symbol);
 
-        $this->values[$this->key] = $value;
+            $this->values[$this->key] = $value;
+
+            return $this->query->addItem($this);
+        }
+
+        $sql = '(' . $value->toSql() . ')';
+
+        $this->sql = $this->setSql($this->key, $symbol, $sql);
+
+        $binds = $value->getBinds();
+
+        $this->values = array_merge($this->values, $binds);
 
         return $this->query->addItem($this);
     }

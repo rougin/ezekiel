@@ -211,6 +211,23 @@ $sql = $query->toSql();
 $binds = $query->getBinds();
 ```
 
+For batch inserting multiple rows, pass an array of associative arrays to `VALUES`:
+
+``` php
+$query = (new Query)
+    ->insertInto('users')
+    ->values(array(
+        array('name' => 'Alice', 'age' => 25),
+        array('name' => 'Bob', 'age' => 30),
+    ));
+
+// INSERT INTO users (name, age) VALUES (?, ?), (?, ?)
+$sql = $query->toSql();
+
+// array('Alice', 25, 'Bob', 30)
+$binds = $query->getBinds();
+```
+
 ### SELECT
 
 ``` php
@@ -227,6 +244,17 @@ $sql = $query->toSql();
 
 // array('name' => '%winds%')
 $binds = $query->getBinds();
+```
+
+To select distinct values, call `DISTINCT` on the select builder before `FROM`:
+
+``` php
+$query = (new Query)
+    ->select('name')->distinct()
+    ->from('users');
+
+// SELECT DISTINCT name FROM users
+$sql = $query->toSql();
 ```
 
 For granular conditions, use the `whereGroup` method to enclose multiple conditions in parentheses:
@@ -249,6 +277,20 @@ $sql = $query->toSql();
 $binds = $query->getBinds();
 ```
 
+In addition to the standard comparison operators, `BETWEEN` and `NOTBETWEEN` are also supported:
+
+``` php
+$query = (new Query)
+    ->select('*')->from('users')
+    ->where('age')->between(6, 7);
+
+// SELECT * FROM users WHERE age BETWEEN ? AND ?
+$sql = $query->toSql();
+
+// array('age' => array(6, 7))
+$binds = $query->getBinds();
+```
+
 ### UPDATE
 
 ``` php
@@ -264,6 +306,143 @@ $sql = $query->toSql();
 
 // array('name' => 'Ezekiel', 'id' => 12)
 $binds = $query->getBinds();
+```
+
+## Subqueries
+
+`Ezekiel` supports subqueries in `WHERE` clauses and as derived tables in the `FROM` clause.
+
+### WHERE IN subquery
+
+``` php
+$sub = (new Query)
+    ->select('user_id')->from('posts')
+    ->where('status')->equals(1);
+
+$query = (new Query)
+    ->select('*')->from('users')
+    ->where('id')->in($sub);
+
+// SELECT * FROM users
+// WHERE id IN (SELECT user_id FROM posts WHERE status = ?)
+$sql = $query->toSql();
+```
+
+### WHERE scalar comparison
+
+``` php
+$sub = (new Query)
+    ->select('MAX(age)')->from('users');
+
+$query = (new Query)
+    ->select('*')->from('users')
+    ->where('age')->equals($sub);
+
+// SELECT * FROM users
+// WHERE age = (SELECT MAX(age) FROM users)
+$sql = $query->toSql();
+```
+
+### Derived table (FROM subquery)
+
+``` php
+$sub = (new Query)
+    ->select('*')->from('users')
+    ->where('active')->equals(1);
+
+$query = (new Query)
+    ->select('*')->from($sub, 'active_users');
+
+// SELECT * FROM (SELECT * FROM users WHERE active = ?) active_users
+$sql = $query->toSql();
+```
+
+## Schema builder
+
+The `Table` class provides a fluent interface for building DDL statements such as `CREATE TABLE` and `DROP TABLE`:
+
+``` php
+use Rougin\Ezekiel\Schema\Table;
+use Rougin\Ezekiel\Schema\Design;
+
+$table = new Table;
+
+$table->create('users', function (Design $d)
+{
+    $d->increments('id');
+    $d->string('name', 100);
+    $d->string('email')->unique();
+    $d->integer('age')->defaultValue(0);
+    $d->text('bio')->nullable();
+    $d->timestamps();
+});
+
+// CREATE TABLE `users` (
+//   `id` INT NOT NULL AUTO_INCREMENT PRIMARY KEY,
+//   `name` VARCHAR(100) NOT NULL,
+//   `email` VARCHAR(255) NOT NULL UNIQUE,
+//   `age` INT NOT NULL DEFAULT 0,
+//   `bio` TEXT,
+//   `created_at` TIMESTAMP,
+//   `updated_at` TIMESTAMP
+// )
+$sql = $table->toSql();
+```
+
+### Column types
+
+| Type | SQL | Notes |
+|---|---|---|
+| `string(name, length)` | `VARCHAR(n)` | Default length: 255 |
+| `integer(name, length)` | `INT(n)` | |
+| `bigInteger(name)` | `BIGINT` | |
+| `tinyInteger(name)` | `TINYINT` | |
+| `boolean(name)` | `TINYINT(1)` | |
+| `float(name)` | `FLOAT` | |
+| `decimal(name, prec, scale)` | `DECIMAL(p, s)` | Default: `(8, 2)` |
+| `text(name)` | `TEXT` | |
+| `date(name)` | `DATE` | |
+| `dateTime(name)` | `DATETIME` | |
+| `timestamp(name)` | `TIMESTAMP` | |
+| `increments(name)` | `INT AUTO_INCREMENT` | Also sets `NOT NULL PRIMARY KEY` |
+
+### Column modifiers
+
+| Modifier | SQL |
+|---|---|
+| `nullable()` | Omits `NOT NULL` |
+| `defaultValue(value)` | `DEFAULT value` |
+| `unique()` | `UNIQUE` |
+| `primary()` | `PRIMARY KEY` |
+| `autoIncrement()` | `AUTO_INCREMENT` |
+
+### Table-level constraints
+
+| Method | SQL |
+|---|---|
+| `primary('col')` | `PRIMARY KEY (`col`)` |
+| `primary(array('a', 'b'))` | `PRIMARY KEY (`a`, `b`)` |
+| `unique('col')` | `UNIQUE (`col`)` |
+| `unique(array('a', 'b'))` | `UNIQUE (`a`, `b`)` |
+| `index('col')` | `INDEX (`col`)` |
+| `index(array('a', 'b'))` | `INDEX (`a`, `b`)` |
+
+### Convenience methods
+
+| Method | Adds |
+|---|---|
+| `timestamps()` | `created_at` and `updated_at` (`TIMESTAMP`, nullable) |
+| `softDeletes()` | `deleted_at` (`TIMESTAMP`, nullable) |
+
+### Drop operations
+
+``` php
+$table = new Table;
+$table->drop('users');
+// DROP TABLE `users`
+
+$table->dropIfExists('users');
+// DROP TABLE IF EXISTS `users`
 ```
 
 ## Snake case

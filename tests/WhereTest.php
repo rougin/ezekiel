@@ -569,4 +569,50 @@ class WhereTest extends Testcase
         $this->assertEquals($expect, $actual);
         // ----------------------------------------
     }
+
+    /**
+     * @return void
+     */
+    public function test_passed_if_where_uses_between()
+    {
+        $sql = 'SELECT * FROM `users` WHERE `age` BETWEEN ? AND ?';
+
+        $expect = array('age' => array(18, 65));
+
+        $query = new Query;
+
+        $query->select('*')->from('users')
+            ->where('age')->between(18, 65);
+
+        $actual = $query->toSql();
+
+        $this->assertEquals($sql, $actual);
+
+        $actual = $query->getBinds();
+
+        $this->assertEquals($expect, $actual);
+    }
+
+    /**
+     * @return void
+     */
+    public function test_passed_if_where_uses_not_between()
+    {
+        $sql = 'SELECT * FROM `users` WHERE `age` NOT BETWEEN ? AND ?';
+
+        $expect = array('age' => array(1, 17));
+
+        $query = new Query;
+
+        $query->select('*')->from('users')
+            ->where('age')->notBetween(1, 17);
+
+        $actual = $query->toSql();
+
+        $this->assertEquals($sql, $actual);
+
+        $actual = $query->getBinds();
+
+        $this->assertEquals($expect, $actual);
+    }
 }

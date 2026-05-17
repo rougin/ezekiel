@@ -13,7 +13,7 @@ use Rougin\Ezekiel\QueryInterface;
 class WhereGroup implements QueryInterface
 {
     /**
-     * @var array<string, mixed>
+     * @var mixed[]
      */
     protected $binds = array();
 
@@ -72,7 +72,7 @@ class WhereGroup implements QueryInterface
     }
 
     /**
-     * @return array<string, mixed>
+     * @return mixed[]
      */
     public function getValues()
     {

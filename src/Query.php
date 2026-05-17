@@ -20,7 +20,7 @@ use Rougin\Ezekiel\Query\WhereGroup;
  * @method \Rougin\Ezekiel\Query\Where      and_where(string $key)
  * @method self                             and_where_group(callable $callback)
  * @method self                             delete_from(string $table)
- * @method array<string, mixed>             get_binds()
+ * @method array<string, mixed>|mixed[]     get_binds()
  * @method \Rougin\Ezekiel\DialectInterface get_dialect()
  * @method \Rougin\Ezekiel\QueryInterface[] get_items()
  * @method string                           get_table()
@@ -68,7 +68,7 @@ class Query
     protected $alias = null;
 
     /**
-     * @var array<string, mixed>
+     * @var mixed[]
      */
     protected $binds = array();
 
@@ -232,7 +232,7 @@ class Query
     /**
      * Returns all SQL bindings.
      *
-     * @return array<string, mixed>
+     * @return mixed[]
      */
     public function getBinds()
     {
@@ -741,6 +741,25 @@ class Query
      */
     protected function setSelectSql()
     {
-        return $this->getItemSql(self::TYPE_SELECT);
+        $sql = '';
+
+        foreach ($this->items as $item)
+        {
+            if ($item->getType() !== self::TYPE_SELECT)
+            {
+                continue;
+            }
+
+            $sql = $item->toSql();
+
+            /** @var \Rougin\Ezekiel\Query\Select */
+            $select = $item;
+
+            $binds = $select->getSubqueryBinds();
+
+            $this->binds = array_merge($this->binds, $binds);
+        }
+
+        return $sql;
     }
 }

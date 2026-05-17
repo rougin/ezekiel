@@ -18,6 +18,16 @@ class Select implements QueryInterface
     protected $alias = null;
 
     /**
+     * @var mixed[]
+     */
+    protected $binds = array();
+
+    /**
+     * @var boolean
+     */
+    protected $distinct = false;
+
+    /**
      * @var string[]
      */
     protected $fields = array();
@@ -28,7 +38,7 @@ class Select implements QueryInterface
     protected $query;
 
     /**
-     * @var string
+     * @var \Rougin\Ezekiel\Query|string
      */
     protected $table;
 
@@ -49,12 +59,28 @@ class Select implements QueryInterface
     }
 
     /**
-     * @param string $table
+     * @return self
+     */
+    public function distinct()
+    {
+        $this->distinct = true;
+
+        return $this;
+    }
+
+    /**
+     * @param \Rougin\Ezekiel\Query|string $table
+     * @param string|null                  $alias
      *
      * @return \Rougin\Ezekiel\Query
      */
-    public function from($table)
+    public function from($table, $alias = null)
     {
+        if ($alias !== null)
+        {
+            $this->alias = $alias;
+        }
+
         $this->table = $table;
 
         return $this->query->addItem($this);
@@ -66,6 +92,14 @@ class Select implements QueryInterface
     public function getType()
     {
         return Query::TYPE_SELECT;
+    }
+
+    /**
+     * @return mixed[]
+     */
+    public function getSubqueryBinds()
+    {
+        return $this->binds;
     }
 
     /**
@@ -98,11 +132,26 @@ class Select implements QueryInterface
             $fields[] = implode(', ', $keys);
         }
 
-        $sql = 'SELECT ' . implode(', ', $fields);
+        $keyword = $this->distinct ? 'SELECT DISTINCT ' : 'SELECT ';
+
+        $sql = $keyword . implode(', ', $fields);
 
         $alias = $this->alias ? ' ' . $this->alias : '';
 
-        $table = $dialect->quote($this->table);
+        $table = $this->table;
+
+        if ($table instanceof Query)
+        {
+            $subSql = $table->toSql();
+
+            $this->binds = $table->getBinds();
+
+            $table = '(' . $subSql . ')';
+        }
+        else
+        {
+            $table = $dialect->quote($table);
+        }
 
         return $sql . ' FROM ' . $table . $alias;
     }
