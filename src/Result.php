@@ -38,15 +38,20 @@ class Result
     {
         $stmt = $this->execute($query);
 
-        /** @var array<string, mixed> */
         $result = $stmt->fetch(\PDO::FETCH_ASSOC);
 
-        if ($query->isEntity())
+        if (! $query->isEntity())
         {
-            return $this->resolve($query, $result);
+            return $result;
         }
 
-        return $result;
+        if ($result === false)
+        {
+            return $query;
+        }
+
+        /** @var array<string, mixed> $result */
+        return $this->resolve($query, $result);
     }
 
     /**
