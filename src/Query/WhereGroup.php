@@ -2,6 +2,7 @@
 
 namespace Rougin\Ezekiel\Query;
 
+use Rougin\Ezekiel\Query;
 use Rougin\Ezekiel\QueryInterface;
 
 /**
@@ -30,7 +31,7 @@ class WhereGroup implements QueryInterface
      * @param \Rougin\Ezekiel\Query $inner
      * @param integer               $group
      */
-    public function __construct(\Rougin\Ezekiel\Query $inner, $group)
+    public function __construct(Query $inner, $group)
     {
         $this->group = $group;
 
@@ -45,7 +46,9 @@ class WhereGroup implements QueryInterface
 
             if ($item instanceof Compare)
             {
-                $this->binds = array_merge($this->binds, $item->getValues());
+                $value = $item->getValues();
+
+                $this->binds = array_merge($this->binds, $value);
             }
 
             $sql = $item->toSql();
@@ -65,7 +68,7 @@ class WhereGroup implements QueryInterface
      */
     public function getType()
     {
-        return \Rougin\Ezekiel\Query::TYPE_WHERE;
+        return Query::TYPE_WHERE;
     }
 
     /**

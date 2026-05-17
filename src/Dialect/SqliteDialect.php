@@ -28,7 +28,7 @@ class SqliteDialect extends AbstractDialect
     /**
      * @return string
      */
-    public function getQuoteChar()
+    public function getOpenQuoteChar()
     {
         return '"';
     }

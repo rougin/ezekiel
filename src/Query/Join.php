@@ -2,6 +2,7 @@
 
 namespace Rougin\Ezekiel\Query;
 
+use Rougin\Ezekiel\Query;
 use Rougin\Ezekiel\QueryInterface;
 
 /**
@@ -47,7 +48,7 @@ class Join implements QueryInterface
      * @param string                $table
      * @param integer               $type
      */
-    public function __construct(\Rougin\Ezekiel\Query $query, $table, $type = self::TYPE_INNER)
+    public function __construct(Query $query, $table, $type = self::TYPE_INNER)
     {
         $this->query = $query;
 
@@ -61,7 +62,7 @@ class Join implements QueryInterface
      */
     public function getType()
     {
-        return \Rougin\Ezekiel\Query::TYPE_JOIN;
+        return Query::TYPE_JOIN;
     }
 
     /**

@@ -2,12 +2,14 @@
 
 namespace Rougin\Ezekiel\Dialect;
 
+use Rougin\Ezekiel\DialectInterface;
+
 /**
  * @package Ezekiel
  *
  * @author Rougin Gutib <rougingutib@gmail.com>
  */
-abstract class AbstractDialect implements \Rougin\Ezekiel\DialectInterface
+abstract class AbstractDialect implements DialectInterface
 {
     /**
      * @return boolean
@@ -18,11 +20,22 @@ abstract class AbstractDialect implements \Rougin\Ezekiel\DialectInterface
     }
 
     /**
-     * Returns the quoting character (e.g., "`", "\"", "[").
+     * Returns the opening quote character.
      *
      * @return string
      */
-    abstract public function getQuoteChar();
+    abstract public function getOpenQuoteChar();
+
+    /**
+     * Returns the closing quote character. Defaults to the
+     * open character for dialects with symmetric quoting.
+     *
+     * @return string
+     */
+    public function getCloseQuoteChar()
+    {
+        return $this->getOpenQuoteChar();
+    }
 
     /**
      * @param string $name
@@ -31,9 +44,11 @@ abstract class AbstractDialect implements \Rougin\Ezekiel\DialectInterface
      */
     public function quote($name)
     {
-        $char = $this->getQuoteChar();
+        $close = $this->getCloseQuoteChar();
 
-        if (strlen($name) > 0 && $name[0] === $char)
+        $open = $this->getOpenQuoteChar();
+
+        if (strlen($name) > 0 && $name[0] === $open)
         {
             return $name;
         }
@@ -61,7 +76,7 @@ abstract class AbstractDialect implements \Rougin\Ezekiel\DialectInterface
             {
                 if ($part !== '*')
                 {
-                    $part = $char . $part . $char;
+                    $part = $open . $part . $close;
                 }
             }
 
@@ -72,7 +87,7 @@ abstract class AbstractDialect implements \Rougin\Ezekiel\DialectInterface
         {
             $parts = explode(' ', $name);
 
-            $table = $char . $parts[0] . $char;
+            $table = $open . $parts[0] . $close;
 
             $rest = array();
 
@@ -89,13 +104,13 @@ abstract class AbstractDialect implements \Rougin\Ezekiel\DialectInterface
                     continue;
                 }
 
-                $rest[] = $char . $p . $char;
+                $rest[] = $open . $p . $close;
             }
 
             return $table . ' ' . implode(' ', $rest);
         }
 
-        return $char . $name . $char;
+        return $open . $name . $close;
     }
 
     /**

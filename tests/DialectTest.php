@@ -172,7 +172,7 @@ class DialectTest extends Testcase
     {
         $dialect = new MssqlDialect;
 
-        $actual = $dialect->getQuoteChar();
+        $actual = $dialect->getOpenQuoteChar();
 
         $this->assertEquals('[', $actual);
     }

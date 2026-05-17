@@ -284,7 +284,7 @@ $binds = $query->get_binds();
 
 ## Dialects
 
-`Ezekiel` generates SQL that adapts to the database platform. The default dialect is MySQL (`MysqlDialect`). To target a different database, use the `setDialect` method:
+`Ezekiel` generates SQL that adapts to the database platform with MySQL (`MysqlDialect`) as its default dialect. To target a different database, use the `setDialect` method:
 
 ``` php
 use Rougin\Ezekiel\Dialect\PgsqlDialect;
@@ -314,7 +314,7 @@ use Rougin\Ezekiel\Dialect\AbstractDialect;
 
 class OracleDialect extends AbstractDialect
 {
-    public function getQuoteChar()
+    public function getOpenQuoteChar()
     {
         return '"';
     }

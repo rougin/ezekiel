@@ -2,6 +2,7 @@
 
 namespace Rougin\Ezekiel\Query;
 
+use Rougin\Ezekiel\Query;
 use Rougin\Ezekiel\QueryInterface;
 
 /**
@@ -35,7 +36,7 @@ class Select implements QueryInterface
      * @param \Rougin\Ezekiel\Query $query
      * @param string|string[]       $fields
      */
-    public function __construct(\Rougin\Ezekiel\Query $query, $fields)
+    public function __construct(Query $query, $fields)
     {
         if (is_string($fields))
         {
@@ -64,7 +65,7 @@ class Select implements QueryInterface
      */
     public function getType()
     {
-        return \Rougin\Ezekiel\Query::TYPE_SELECT;
+        return Query::TYPE_SELECT;
     }
 
     /**

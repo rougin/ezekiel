@@ -2,6 +2,7 @@
 
 namespace Rougin\Ezekiel\Query;
 
+use Rougin\Ezekiel\Query;
 use Rougin\Ezekiel\QueryInterface;
 
 /**
@@ -24,7 +25,7 @@ class Insert implements QueryInterface
     /**
      * @param \Rougin\Ezekiel\Query $query
      */
-    public function __construct(\Rougin\Ezekiel\Query $query)
+    public function __construct(Query $query)
     {
         $this->query = $query;
     }
@@ -34,7 +35,7 @@ class Insert implements QueryInterface
      */
     public function getType()
     {
-        return \Rougin\Ezekiel\Query::TYPE_INSERT;
+        return Query::TYPE_INSERT;
     }
 
     /**

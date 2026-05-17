@@ -2,6 +2,8 @@
 
 namespace Rougin\Ezekiel\Query;
 
+use Rougin\Ezekiel\Query;
+
 /**
  * @package Ezekiel
  *
@@ -12,5 +14,5 @@ class Having extends Compare
     /**
      * @var integer
      */
-    protected $type = \Rougin\Ezekiel\Query::TYPE_HAVING;
+    protected $type = Query::TYPE_HAVING;
 }

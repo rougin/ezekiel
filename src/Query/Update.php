@@ -2,6 +2,8 @@
 
 namespace Rougin\Ezekiel\Query;
 
+use Rougin\Ezekiel\Query;
+
 /**
  * @package Ezekiel
  *
@@ -22,7 +24,7 @@ class Update
     /**
      * @param \Rougin\Ezekiel\Query $query
      */
-    public function __construct(\Rougin\Ezekiel\Query $query)
+    public function __construct(Query $query)
     {
         $this->query = $query;
     }

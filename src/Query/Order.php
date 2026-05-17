@@ -2,6 +2,7 @@
 
 namespace Rougin\Ezekiel\Query;
 
+use Rougin\Ezekiel\Query;
 use Rougin\Ezekiel\QueryInterface;
 
 /**
@@ -34,7 +35,7 @@ class Order implements QueryInterface
      * @param \Rougin\Ezekiel\Query $query
      * @param string                $key
      */
-    public function __construct(\Rougin\Ezekiel\Query $query, $key)
+    public function __construct(Query $query, $key)
     {
         $this->key = $key;
 
@@ -66,7 +67,7 @@ class Order implements QueryInterface
      */
     public function getType()
     {
-        return \Rougin\Ezekiel\Query::TYPE_ORDER;
+        return Query::TYPE_ORDER;
     }
 
     /**

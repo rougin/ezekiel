@@ -2,6 +2,7 @@
 
 namespace Rougin\Ezekiel\Query;
 
+use Rougin\Ezekiel\Query;
 use Rougin\Ezekiel\QueryInterface;
 
 /**
@@ -52,7 +53,7 @@ class Compare implements QueryInterface
      * @param string                $key
      * @param integer               $group
      */
-    public function __construct(\Rougin\Ezekiel\Query $query, $key, $group = self::GROUP_NONE)
+    public function __construct(Query $query, $key, $group = self::GROUP_NONE)
     {
         $this->query = $query;
 
@@ -330,7 +331,7 @@ class Compare implements QueryInterface
 
         $type = 'WHERE';
 
-        if ($this->type === \Rougin\Ezekiel\Query::TYPE_HAVING)
+        if ($this->type === Query::TYPE_HAVING)
         {
             $type = 'HAVING';
         }
