@@ -588,14 +588,70 @@ class Query
     /**
      * @param string  $sql
      * @param integer $type
+     * @param string  $prefix
+     * @param string  $separator
+     *
+     * @return string
+     */
+    protected function getItemList($sql, $type, $prefix, $separator)
+    {
+        $first = true;
+
+        $items = array();
+
+        foreach ($this->items as $item)
+        {
+            if ($item->getType() !== $type)
+            {
+                continue;
+            }
+
+            $temp = $item->toSql();
+
+            if (! $first)
+            {
+                $temp = str_replace($prefix, '', $temp);
+            }
+
+            $items[] = trim($temp);
+
+            $first = false;
+        }
+
+        return trim($sql . ' ' . implode($separator, $items));
+    }
+
+    /**
+     * @param integer $type
+     *
+     * @return string
+     */
+    protected function getItemSql($type)
+    {
+        $sql = '';
+
+        foreach ($this->items as $item)
+        {
+            if ($item->getType() !== $type)
+            {
+                continue;
+            }
+
+            $sql = $item->toSql();
+        }
+
+        return $sql;
+    }
+
+    /**
+     * @param string  $sql
+     * @param integer $type
      *
      * @return string
      */
     protected function setCompareSql($sql, $type)
     {
-        $isHaving = $type === self::TYPE_HAVING;
-
-        $isWhere = $type === self::TYPE_WHERE;
+        $prefix = $type === self::TYPE_HAVING ? 'HAVING' : 'WHERE';
 
         $first = true;
 
@@ -603,16 +659,10 @@ class Query
 
         foreach ($this->items as $item)
         {
-            // Skip items if not "HAVING" or "WHERE" --------------------------
-            $isTypeHaving = $item->getType() === self::TYPE_HAVING;
-
-            $isTypeWhere = $item->getType() === self::TYPE_WHERE;
-
-            if (($isHaving && ! $isTypeHaving) || ($isWhere && ! $isTypeWhere))
+            if ($item->getType() !== $type)
             {
                 continue;
             }
-            // ----------------------------------------------------------------
 
             if ($item instanceof Compare || $item instanceof WhereGroup)
             {
@@ -623,11 +673,9 @@ class Query
 
             $temp = $item->toSql();
 
-            $text = $isHaving ? 'HAVING' : 'WHERE';
-
             if (! $first)
             {
-                $temp = str_replace($text . ' ', '', $temp);
+                $temp = str_replace($prefix . ' ', '', $temp);
             }
 
             $items[] = trim($temp);
@@ -685,30 +733,7 @@ class Query
      */
     protected function setOrderSql($sql)
     {
-        $first = true;
-
-        $items = array();
-
-        foreach ($this->items as $item)
-        {
-            if ($item->getType() !== self::TYPE_ORDER)
-            {
-                continue;
-            }
-
-            $temp = $item->toSql();
-
-            if (! $first)
-            {
-                $temp = str_replace('ORDER BY', '', $temp);
-            }
-
-            $items[] = trim($temp);
-
-            $first = false;
-        }
-
-        return trim($sql . ' ' . implode(', ', $items));
+        return $this->getItemList($sql, self::TYPE_ORDER, 'ORDER BY', ', ');
     }
 
     /**
@@ -716,18 +741,6 @@ class Query
      */
     protected function setSelectSql()
     {
-        $sql = '';
-
-        foreach ($this->items as $item)
-        {
-            if ($item->getType() !== self::TYPE_SELECT)
-            {
-                continue;
-            }
-
-            $sql = $item->toSql();
-        }
-
-        return $sql;
+        return $this->getItemSql(self::TYPE_SELECT);
     }
 }

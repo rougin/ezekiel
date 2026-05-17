@@ -39,7 +39,7 @@ class WhereGroup implements QueryInterface
 
         foreach ($inner->getItems() as $item)
         {
-            if ($item->getType() !== \Rougin\Ezekiel\Query::TYPE_WHERE)
+            if ($item->getType() !== Query::TYPE_WHERE)
             {
                 continue;
             }
@@ -92,18 +92,7 @@ class WhereGroup implements QueryInterface
      */
     protected function setPrefix()
     {
-        $prefix = 'WHERE ';
-
-        if ($this->group === Compare::GROUP_AND)
-        {
-            $prefix = 'AND ';
-        }
-
-        if ($this->group === Compare::GROUP_OR)
-        {
-            $prefix = 'OR ';
-        }
-
-        return $prefix;
+        return Compare::groupToStr($this->group, 'WHERE ');
     }
+
 }

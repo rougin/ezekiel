@@ -66,4 +66,20 @@ class OrderTest extends Testcase
         $this->assertEquals($expect, $actual);
         // -----------------------------------------
     }
+
+    /**
+     * @return void
+     */
+    public function test_passed_if_order_defaults_to_desc()
+    {
+        $query = new Query;
+
+        $query->setDialect(new Dialect\MysqlDialect);
+
+        $order = new \Rougin\Ezekiel\Query\Order($query, 'name');
+
+        $actual = $order->toSql();
+
+        $this->assertEquals('ORDER BY `name` DESC', $actual);
+    }
 }

@@ -162,6 +162,57 @@ class ResultTest extends Testcase
     /**
      * @return void
      */
+    public function test_passed_if_first_returns_empty_for_no_rows()
+    {
+        $query = new Query;
+
+        $query->select('u.*')->from('users u')
+            ->where('u.name')->equals('NonExistent');
+
+        $result = new Result($this->pdo);
+
+        $actual = $result->first($query);
+
+        $this->assertEmpty($actual);
+    }
+
+    /**
+     * @return void
+     */
+    public function test_passed_if_first_returns_empty_for_no_rows_entity()
+    {
+        $query = new User;
+
+        $query->select('id, name')->from('users')
+            ->where('name')->equals('NonExistent');
+
+        $result = new UserResult($this->pdo);
+
+        $actual = $result->first($query);
+
+        $this->assertInstanceOf('Rougin\Ezekiel\Fixture\Entities\User', $actual);
+    }
+
+    /**
+     * @return void
+     */
+    public function test_passed_if_items_returns_empty_for_no_rows()
+    {
+        $query = new Query;
+
+        $query->select('u.*')->from('users u')
+            ->where('u.name')->equals('NonExistent');
+
+        $result = new Result($this->pdo);
+
+        $actual = $result->items($query);
+
+        $this->assertEquals(array(), $actual);
+    }
+
+    /**
+     * @return void
+     */
     protected function doSetUp()
     {
         // Initialize the database --------
