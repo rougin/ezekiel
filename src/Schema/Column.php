@@ -153,11 +153,13 @@ class Column
             {
                 $sql .= ' DEFAULT ' . (int) $this->default;
             }
-            elseif (is_int($this->default) || is_float($this->default))
+
+            if (is_int($this->default) || is_float($this->default))
             {
                 $sql .= ' DEFAULT ' . $this->default;
             }
-            elseif (is_string($this->default))
+
+            if (is_string($this->default))
             {
                 $sql .= ' DEFAULT \'' . $this->default . '\'';
             }

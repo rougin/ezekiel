@@ -139,12 +139,7 @@ class Insert implements QueryInterface
         /** @var array<string, mixed>[] */
         $rows = $this->values;
 
-        $firstRow = reset($rows);
-
-        if (! is_array($firstRow))
-        {
-            return '';
-        }
+        $firstRow = $rows[0];
 
         $keys = array();
 

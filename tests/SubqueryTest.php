@@ -12,21 +12,20 @@ class SubqueryTest extends Testcase
     /**
      * @return void
      */
-    public function test_passed_if_where_in_uses_subquery()
+    public function test_passed_if_from_uses_subquery()
     {
-        $sql = 'SELECT * FROM `users` WHERE `id` IN (SELECT `user_id` FROM `posts` WHERE `status` = ?)';
+        $sql = 'SELECT * FROM (SELECT * FROM `users` WHERE `active` = ?) active_users';
 
-        $expect = array('status' => 1);
+        $expect = array('active' => 1);
 
         $sub = new Query;
 
-        $sub->select('user_id')->from('posts')
-            ->where('status')->equals(1);
+        $sub->select('*')->from('users')
+            ->where('active')->equals(1);
 
         $query = new Query;
 
-        $query->select('*')->from('users')
-            ->where('id')->in($sub);
+        $query->select('*')->from($sub, 'active_users');
 
         $actual = $query->toSql();
 
@@ -40,11 +39,11 @@ class SubqueryTest extends Testcase
     /**
      * @return void
      */
-    public function test_passed_if_where_not_in_uses_subquery()
+    public function test_passed_if_subquery_binds_merge_with_parent()
     {
-        $sql = 'SELECT * FROM `users` WHERE `id` NOT IN (SELECT `user_id` FROM `posts` WHERE `status` = ?)';
+        $sql = 'SELECT * FROM `users` WHERE `id` IN (SELECT `user_id` FROM `posts` WHERE `status` = ?) AND `active` = ?';
 
-        $expect = array('status' => 1);
+        $expect = array('status' => 1, 'active' => 1);
 
         $sub = new Query;
 
@@ -54,7 +53,8 @@ class SubqueryTest extends Testcase
         $query = new Query;
 
         $query->select('*')->from('users')
-            ->where('id')->notIn($sub);
+            ->where('id')->in($sub)
+            ->andWhere('active')->equals(1);
 
         $actual = $query->toSql();
 
@@ -110,20 +110,21 @@ class SubqueryTest extends Testcase
     /**
      * @return void
      */
-    public function test_passed_if_from_uses_subquery()
+    public function test_passed_if_where_in_uses_subquery()
     {
-        $sql = 'SELECT * FROM (SELECT * FROM `users` WHERE `active` = ?) active_users';
+        $sql = 'SELECT * FROM `users` WHERE `id` IN (SELECT `user_id` FROM `posts` WHERE `status` = ?)';
 
-        $expect = array('active' => 1);
+        $expect = array('status' => 1);
 
         $sub = new Query;
 
-        $sub->select('*')->from('users')
-            ->where('active')->equals(1);
+        $sub->select('user_id')->from('posts')
+            ->where('status')->equals(1);
 
         $query = new Query;
 
-        $query->select('*')->from($sub, 'active_users');
+        $query->select('*')->from('users')
+            ->where('id')->in($sub);
 
         $actual = $query->toSql();
 
@@ -137,11 +138,11 @@ class SubqueryTest extends Testcase
     /**
      * @return void
      */
-    public function test_passed_if_subquery_binds_merge_with_parent()
+    public function test_passed_if_where_not_in_uses_subquery()
     {
-        $sql = 'SELECT * FROM `users` WHERE `id` IN (SELECT `user_id` FROM `posts` WHERE `status` = ?) AND `active` = ?';
+        $sql = 'SELECT * FROM `users` WHERE `id` NOT IN (SELECT `user_id` FROM `posts` WHERE `status` = ?)';
 
-        $expect = array('status' => 1, 'active' => 1);
+        $expect = array('status' => 1);
 
         $sub = new Query;
 
@@ -151,8 +152,7 @@ class SubqueryTest extends Testcase
         $query = new Query;
 
         $query->select('*')->from('users')
-            ->where('id')->in($sub)
-            ->andWhere('active')->equals(1);
+            ->where('id')->notIn($sub);
 
         $actual = $query->toSql();
 

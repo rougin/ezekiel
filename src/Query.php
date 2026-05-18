@@ -622,28 +622,6 @@ class Query
     }
 
     /**
-     * @param integer $type
-     *
-     * @return string
-     */
-    protected function getItemSql($type)
-    {
-        $sql = '';
-
-        foreach ($this->items as $item)
-        {
-            if ($item->getType() !== $type)
-            {
-                continue;
-            }
-
-            $sql = $item->toSql();
-        }
-
-        return $sql;
-    }
-
-    /**
      * @param string  $sql
      * @param integer $type
      *

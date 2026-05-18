@@ -12,13 +12,13 @@ class SelectTest extends Testcase
     /**
      * @return void
      */
-    public function test_passed_if_select_has_distinct()
+    public function test_passed_if_select_distinct_uses_multi_fields()
     {
-        $expect = 'SELECT DISTINCT `name` FROM `users`';
+        $expect = 'SELECT DISTINCT `name`, `age` FROM `users`';
 
         $query = new Query;
 
-        $query->select('name')->distinct()->from('users');
+        $query->select(array('name', 'age'))->distinct()->from('users');
 
         $actual = $query->toSql();
 
@@ -28,13 +28,13 @@ class SelectTest extends Testcase
     /**
      * @return void
      */
-    public function test_passed_if_select_has_distinct_with_multiple_fields()
+    public function test_passed_if_select_has_distinct()
     {
-        $expect = 'SELECT DISTINCT `name`, `age` FROM `users`';
+        $expect = 'SELECT DISTINCT `name` FROM `users`';
 
         $query = new Query;
 
-        $query->select(array('name', 'age'))->distinct()->from('users');
+        $query->select('name')->distinct()->from('users');
 
         $actual = $query->toSql();
 

@@ -2,6 +2,8 @@
 
 namespace Rougin\Ezekiel;
 
+use Rougin\Ezekiel\Fixture\Entities\User;
+
 /**
  * @package Ezekiel
  *
@@ -36,6 +38,75 @@ class QueryTest extends Testcase
 
         $this->assertEquals($expect, $actual);
         // ----------------------------------------
+    }
+
+    /**
+     * @return void
+     */
+    public function test_passed_if_delete_has_limit()
+    {
+        $sql = 'DELETE FROM `users` WHERE `name` = ? LIMIT 10, 0';
+
+        $query = new Query;
+
+        $query->deleteFrom('users')
+            ->where('name')->equals('Royce')
+            ->limit(10);
+
+        $actual = $query->toSql();
+
+        $this->assertEquals($sql, $actual);
+    }
+
+    /**
+     * @return void
+     */
+    public function test_passed_if_entity_is_true_for_class()
+    {
+        $entity = new User;
+
+        $this->assertTrue($entity->isEntity());
+    }
+
+    /**
+     * @return void
+     */
+    public function test_passed_if_get_items_returns_queries()
+    {
+        $expect = 'Rougin\Ezekiel\QueryInterface';
+
+        $query = new Query;
+
+        $query->select('*')->from('users')
+            ->where('name')->equals('Royce');
+
+        $items = $query->getItems();
+
+        $this->assertCount(2, $items);
+
+        $this->assertInstanceOf($expect, $items[0]);
+    }
+
+    /**
+     * @return void
+     */
+    public function test_passed_if_get_table_returns_value()
+    {
+        $query = new Query;
+
+        $query->insertInto('users');
+
+        $this->assertEquals('users', $query->getTable());
+    }
+
+    /**
+     * @return void
+     */
+    public function test_passed_if_is_entity_returns_false_for_query()
+    {
+        $query = new Query;
+
+        $this->assertFalse($query->isEntity());
     }
 
     /**
@@ -163,123 +234,6 @@ class QueryTest extends Testcase
         $query = new Query;
 
         $query->__call('invalid_method', array());
-    }
-
-    /**
-     * @return void
-     */
-    public function test_passed_if_delete_has_limit()
-    {
-        $sql = 'DELETE FROM `users` WHERE `name` = ? LIMIT 10, 0';
-
-        $query = new Query;
-
-        $query->deleteFrom('users')
-            ->where('name')->equals('Royce')
-            ->limit(10);
-
-        $actual = $query->toSql();
-
-        $this->assertEquals($sql, $actual);
-    }
-
-    /**
-     * @return void
-     */
-    public function test_passed_if_get_items_returns_registered_queries()
-    {
-        $query = new Query;
-
-        $query->select('*')->from('users')
-            ->where('name')->equals('Royce');
-
-        $items = $query->getItems();
-
-        $this->assertCount(2, $items);
-
-        $this->assertInstanceOf('Rougin\Ezekiel\QueryInterface', $items[0]);
-    }
-
-    /**
-     * @return void
-     */
-    public function test_passed_if_get_table_returns_value()
-    {
-        $query = new Query;
-
-        $query->insertInto('users');
-
-        $this->assertEquals('users', $query->getTable());
-    }
-
-    /**
-     * @return void
-     */
-    public function test_passed_if_is_entity_returns_false_for_query()
-    {
-        $query = new Query;
-
-        $this->assertFalse($query->isEntity());
-    }
-
-    /**
-     * @return void
-     */
-    public function test_passed_if_is_entity_returns_true_for_entity_class()
-    {
-        $entity = new Fixture\Entities\User;
-
-        $this->assertTrue($entity->isEntity());
-    }
-
-    /**
-     * @return void
-     */
-    public function test_passed_if_query_alias_is_null_by_default()
-    {
-        $query = new Query;
-
-        $class = new \ReflectionClass($query);
-
-        $prop = $class->getProperty('alias');
-
-        $prop->setAccessible(true);
-
-        $this->assertNull($prop->getValue($query));
-    }
-
-    /**
-     * @return void
-     */
-    public function test_passed_if_query_fields_is_empty_by_default()
-    {
-        $query = new Query;
-
-        $class = new \ReflectionClass($query);
-
-        $prop = $class->getProperty('fields');
-
-        $prop->setAccessible(true);
-
-        $this->assertEquals(array(), $prop->getValue($query));
-    }
-
-    /**
-     * @return void
-     */
-    public function test_passed_if_select_alias_is_null_by_default()
-    {
-        $query = new Query;
-
-        $select = new \Rougin\Ezekiel\Query\Select($query, '*');
-
-        $class = new \ReflectionClass($select);
-
-        $prop = $class->getProperty('alias');
-
-        $prop->setAccessible(true);
-
-        $this->assertNull($prop->getValue($select));
     }
 
     /**

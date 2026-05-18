@@ -678,20 +678,6 @@ class DialectTest extends Testcase
     /**
      * @return void
      */
-    public function test_passed_if_sqlite_dialect_does_not_quote_number()
-    {
-        $dialect = new SqliteDialect;
-
-        $expect = '1';
-
-        $actual = $dialect->quote('1');
-
-        $this->assertEquals($expect, $actual);
-    }
-
-    /**
-     * @return void
-     */
     public function test_passed_if_sqlite_dialect_does_not_quote_star()
     {
         $dialect = new SqliteDialect;
@@ -765,6 +751,20 @@ class DialectTest extends Testcase
         $expect = '"u"."name"';
 
         $actual = $dialect->quote('u.name');
+
+        $this->assertEquals($expect, $actual);
+    }
+
+    /**
+     * @return void
+     */
+    public function test_passed_if_sqlite_dialect_skips_number()
+    {
+        $dialect = new SqliteDialect;
+
+        $expect = '1';
+
+        $actual = $dialect->quote('1');
 
         $this->assertEquals($expect, $actual);
     }
