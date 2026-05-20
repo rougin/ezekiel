@@ -87,19 +87,19 @@ class Select implements QueryInterface
     }
 
     /**
-     * @return integer
-     */
-    public function getType()
-    {
-        return Query::TYPE_SELECT;
-    }
-
-    /**
      * @return mixed[]
      */
     public function getSubqueryBinds()
     {
         return $this->binds;
+    }
+
+    /**
+     * @return integer
+     */
+    public function getType()
+    {
+        return Query::TYPE_SELECT;
     }
 
     /**

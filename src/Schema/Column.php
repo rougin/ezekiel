@@ -29,7 +29,7 @@ class Column
     /**
      * @var integer|string|null
      */
-    protected $length;
+    protected $length = null;
 
     /**
      * @var string
