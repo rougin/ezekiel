@@ -124,28 +124,23 @@ class Result
      */
     protected function resolve($query, $data)
     {
-        $class = new \ReflectionClass($query);
-
         foreach ($data as $key => $value)
         {
-            if (! $class->hasProperty($key))
+            $key = str_replace('_', ' ', $key);
+
+            $key = str_replace(' ', '', ucwords($key));
+
+            $setter = 'set' . $key;
+
+            if (! method_exists($query, $setter))
             {
                 continue;
             }
 
-            $prop = $class->getProperty($key);
+            /** @var callable */
+            $cb = array($query, $setter);
 
-            if (! $prop->isPublic() && PHP_VERSION_ID < 80500)
-            {
-                $prop->setAccessible(true);
-            }
-
-            $prop->setValue($query, $value);
-
-            if (! $prop->isPublic() && PHP_VERSION_ID < 80500)
-            {
-                $prop->setAccessible(false);
-            }
+            call_user_func($cb, $value);
         }
 
         return $query;
