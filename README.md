@@ -273,7 +273,7 @@ $query = (new Query)
 // WHERE status = ? AND (name = ? OR name = ?)
 $sql = $query->toSql();
 
-// array('status' => 1, 'name' => 'Alice', 'name' => 'Bob')
+// array('status' => 1, 'name' => array('Alice', 'Bob'))
 $binds = $query->getBinds();
 ```
 

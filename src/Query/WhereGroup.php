@@ -48,7 +48,7 @@ class WhereGroup implements QueryInterface
             {
                 $value = $item->getValues();
 
-                $this->binds = array_merge($this->binds, $value);
+                $this->binds = $inner->mergeBinds($this->binds, $value);
             }
 
             $sql = $item->toSql();

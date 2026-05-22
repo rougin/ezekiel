@@ -615,4 +615,34 @@ class WhereTest extends Testcase
         $this->assertEquals($expect, $actual);
         // ----------------------------------------
     }
+
+    /**
+     * @return void
+     */
+    public function test_where_group_with_duplicate_columns()
+    {
+        $sql = 'SELECT * FROM `users` ';
+
+        $sql .= 'WHERE `status` = ? AND (`name` = ? OR `name` = ?)';
+
+        $expect = array('status' => 1, 'name' => array('Alice', 'Bob'));
+
+        $query = new Query;
+
+        $query->select('*')->from('users')
+            ->where('status')->equals(1)
+            ->whereGroup(function (Query $inner)
+            {
+                $inner->where('name')->equals('Alice')
+                    ->orWhere('name')->equals('Bob');
+            });
+
+        $actual = $query->toSql();
+
+        $this->assertEquals($sql, $actual);
+
+        $actual = $query->getBinds();
+
+        $this->assertEquals($expect, $actual);
+    }
 }

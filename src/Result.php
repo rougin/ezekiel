@@ -94,7 +94,24 @@ class Result
 
         $binds = $query->getBinds();
 
-        $stmt->execute(array_values($binds));
+        $flat = array();
+
+        foreach ($binds as $value)
+        {
+            if (! is_array($value))
+            {
+                $flat[] = $value;
+
+                continue;
+            }
+
+            foreach ($value as $v)
+            {
+                $flat[] = $v;
+            }
+        }
+
+        $stmt->execute($flat);
 
         return $stmt;
     }

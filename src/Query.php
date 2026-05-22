@@ -375,6 +375,40 @@ class Query
     }
 
     /**
+     * Merges two bind arrays, grouping values for duplicate keys into an array.
+     *
+     * @param mixed[] $a
+     * @param mixed[] $b
+     *
+     * @return mixed[]
+     */
+    public function mergeBinds(array $a, array $b)
+    {
+        foreach ($b as $key => $value)
+        {
+            if (! array_key_exists($key, $a))
+            {
+                $a[$key] = $value;
+
+                continue;
+            }
+
+            $existing = $a[$key];
+
+            if (! is_array($existing))
+            {
+                $existing = array($existing);
+            }
+
+            $incoming = is_array($value) ? $value : array($value);
+
+            $a[$key] = array_merge($existing, $incoming);
+        }
+
+        return $a;
+    }
+
+    /**
      * Generates an "OR HAVING" query.
      *
      * @param string $key
@@ -646,7 +680,7 @@ class Query
             {
                 $values = $item->getValues();
 
-                $this->binds = array_merge($this->binds, $values);
+                $this->binds = $this->mergeBinds($this->binds, $values);
             }
 
             $temp = $item->toSql();
@@ -656,7 +690,16 @@ class Query
                 $temp = str_replace($prefix . ' ', '', $temp);
             }
 
-            $items[] = trim($temp);
+            $temp = trim($temp);
+
+            $matched = preg_match('/^(AND|OR)\s/i', $temp);
+
+            if (! $first && $temp !== '' && ! $matched)
+            {
+                $temp = 'AND ' . $temp;
+            }
+
+            $items[] = $temp;
 
             $first = false;
         }

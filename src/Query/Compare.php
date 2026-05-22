@@ -370,7 +370,7 @@ class Compare implements QueryInterface
 
         $subBinds = $sub->getBinds();
 
-        $this->values = array_merge($this->values, $subBinds);
+        $this->values = $this->query->mergeBinds($this->values, $subBinds);
 
         return $this->query->addItem($this);
     }
