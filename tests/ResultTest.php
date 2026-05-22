@@ -71,6 +71,26 @@ class ResultTest extends Testcase
     /**
      * @return void
      */
+    public function test_passed_if_result_handles_between_bindings()
+    {
+        $query = new Query;
+
+        $query->select('u.*')->from('users u')
+            ->where('u.age')->between(20, 30);
+
+        $result = new Result($this->pdo);
+
+        /** @var array<string, mixed>[] */
+        $items = $result->items($query);
+
+        $this->assertCount(1, $items);
+
+        $this->assertEquals('Windsor', $items[0]['name']);
+    }
+
+    /**
+     * @return void
+     */
     public function test_passed_if_result_returns_entities()
     {
         // Define the expected data --------
@@ -137,6 +157,8 @@ class ResultTest extends Testcase
     {
         // Define the expected data ------------------
         $data = array('id' => 2, 'name' => 'Windsor');
+
+        $data['age'] = 25;
         // -------------------------------------------
 
         // Check if the actual results returned ---
@@ -162,6 +184,8 @@ class ResultTest extends Testcase
         $data = array();
 
         $data[] = array('id' => 2, 'name' => 'Windsor');
+
+        $data[0]['age'] = 25;
         // ---------------------------------------------
 
         // Check if the actual results returned ---
@@ -225,15 +249,13 @@ class ResultTest extends Testcase
         $pdo->setAttribute($attr, $key);
         // --------------------------------
 
-        // Create the table and its initial data -----------------------
-        $query = 'CREATE TABLE users (id INTEGER, name TEXT)';
+        $query = 'CREATE TABLE users (id INTEGER, name TEXT, age INTEGER)';
 
         $pdo->exec($query);
 
-        $query = 'INSERT INTO users (id, name) VALUES (2, \'Windsor\')';
+        $query = 'INSERT INTO users (id, name, age) VALUES (2, \'Windsor\', 25)';
 
         $pdo->exec($query);
-        // -------------------------------------------------------------
 
         $this->pdo = $pdo;
     }
