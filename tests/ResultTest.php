@@ -2,8 +2,11 @@
 
 namespace Rougin\Ezekiel;
 
+use Rougin\Ezekiel\Dialect\SqliteDialect;
 use Rougin\Ezekiel\Fixture\Entities\User;
 use Rougin\Ezekiel\Fixture\Results\UserResult;
+use Rougin\Ezekiel\Schema\Design;
+use Rougin\Ezekiel\Schema\Table;
 
 /**
  * @package Ezekiel
@@ -249,13 +252,42 @@ class ResultTest extends Testcase
         $pdo->setAttribute($attr, $key);
         // --------------------------------
 
-        $query = 'CREATE TABLE users (id INTEGER, name TEXT, age INTEGER)';
+        // Create "users" table -----
+        $dialect = new SqliteDialect;
 
-        $pdo->exec($query);
+        $table = new Table($dialect);
 
-        $query = 'INSERT INTO users (id, name, age) VALUES (2, \'Windsor\', 25)';
+        $fn = function (Design $d)
+        {
+            $d->integer('id');
 
-        $pdo->exec($query);
+            $d->text('name');
+
+            $d->integer('age');
+        };
+
+        $table->create('users', $fn);
+
+        $pdo->exec($table->toSql());
+        // --------------------------
+
+        // Insert sample data to "users" table ---
+        $query = new Query;
+
+        $data = array('id' => 2, 'age' => 25);
+
+        $data['name'] = 'Windsor';
+
+        $query = $query->setDialect($dialect)
+            ->insertInto('users')
+            ->values($data);
+
+        $stmt = $pdo->prepare($query->toSql());
+
+        $binds = array_values($query->getBinds());
+
+        $stmt->execute($binds);
+        // ---------------------------------------
 
         $this->pdo = $pdo;
     }
