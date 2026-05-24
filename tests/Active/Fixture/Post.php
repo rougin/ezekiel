@@ -26,7 +26,7 @@ class Post extends Model
      */
     public function tags()
     {
-        return $this->belongsToMany(__NAMESPACE__ . '\Tag', 'post_tag', 'post_id', 'tag_id')
+        return $this->belongsToMany(__NAMESPACE__ . '\Tag', 'post_tag', 'post_id')
             ->withPivot('extra');
     }
 

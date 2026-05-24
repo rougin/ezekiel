@@ -36,7 +36,7 @@ class HasMany
     /**
      * @var string
      */
-    protected $related;
+    protected $class;
 
     /**
      * @var \Rougin\Ezekiel\Active\Model[]
@@ -45,11 +45,11 @@ class HasMany
 
     /**
      * @param \Rougin\Ezekiel\Active\Model $parent
-     * @param string                       $related
+     * @param string                       $class
      * @param string|null                  $foreign
      * @param string|null                  $local
      */
-    public function __construct(Model $parent, $related, $foreign = null, $local = null)
+    public function __construct(Model $parent, $class, $foreign = null, $local = null)
     {
         // Return foreign key from the parent model ---
         $default = $parent->getForeignKey();
@@ -65,7 +65,7 @@ class HasMany
 
         $this->parent = $parent;
 
-        $this->related = $related;
+        $this->class = $class;
 
         $name = $parent->getConnectionName();
 
@@ -84,10 +84,10 @@ class HasMany
             return array();
         }
 
-        $related = $this->related;
+        $class = $this->class;
 
         /** @var \Rougin\Ezekiel\Active\Model */
-        $model = new $related;
+        $model = new $class;
 
         return $model->where($this->foreign, $value)->get();
     }

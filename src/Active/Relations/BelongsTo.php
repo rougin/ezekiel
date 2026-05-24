@@ -36,34 +36,32 @@ class BelongsTo
     /**
      * @var string
      */
-    protected $related;
+    protected $class;
 
     /**
      * @param \Rougin\Ezekiel\Active\Model $parent
-     * @param string                       $related
+     * @param string                       $class
      * @param string|null                  $foreign
      * @param string|null                  $owner
      */
-    public function __construct(Model $parent, $related, $foreign = null, $owner = null)
+    public function __construct(Model $parent, $class, $foreign = null, $owner = null)
     {
         /** @var \Rougin\Ezekiel\Active\Model */
-        $instance = new $related;
+        $instance = new $class;
 
         // Return foreign key from the related model ---
         $default = $instance->getForeignKey();
 
         $this->foreign = $foreign ? $foreign : $default;
-        // ---------------------------------------------
 
         // Return the owner key from the parent ---
         $default = $instance->getPrimaryKey();
 
         $this->owner = $owner ? $owner : $default;
-        // ----------------------------------------
 
         $this->parent = $parent;
 
-        $this->related = $related;
+        $this->class = $class;
 
         $name = $parent->getConnectionName();
 
@@ -82,10 +80,10 @@ class BelongsTo
             return null;
         }
 
-        $related = $this->related;
+        $class = $this->class;
 
         /** @var \Rougin\Ezekiel\Active\Model */
-        $model = new $related;
+        $model = new $class;
 
         $model = $model->where($this->owner, $value);
 

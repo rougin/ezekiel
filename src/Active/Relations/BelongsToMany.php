@@ -38,12 +38,12 @@ class BelongsToMany
     /**
      * @var string
      */
-    protected $related;
+    protected $class;
 
     /**
      * @var string
      */
-    protected $relatedKey;
+    protected $related;
 
     /**
      * @var string
@@ -57,15 +57,15 @@ class BelongsToMany
 
     /**
      * @param \Rougin\Ezekiel\Active\Model $parent
-     * @param string                       $related
+     * @param string                       $class
      * @param string|null                  $table
      * @param string|null                  $foreign
-     * @param string|null                  $relatedKey
+     * @param string|null                  $related
      */
-    public function __construct(Model $parent, $related, $table = null, $foreign = null, $relatedKey = null)
+    public function __construct(Model $parent, $class, $table = null, $foreign = null, $related = null)
     {
         /** @var \Rougin\Ezekiel\Active\Model */
-        $instance = new $related;
+        $instance = new $class;
 
         // Return foreign key from the parent model ---
         $default = $parent->getForeignKey();
@@ -75,21 +75,21 @@ class BelongsToMany
 
         $this->parent = $parent;
 
-        $this->related = $related;
+        $this->class = $class;
 
         // Return related key from the related model ---
         $default = $instance->getForeignKey();
 
-        $this->relatedKey = $relatedKey;
+        $this->related = $related;
 
-        if (! $relatedKey)
+        if (! $related)
         {
-            $this->relatedKey = $default;
+            $this->related = $default;
         }
         // ---------------------------------------------
 
         // Return joining table from the parent model ---
-        $default = $parent->joiningTable($related);
+        $default = $parent->joiningTable($class);
 
         $this->table = $table ? $table : $default;
         // ----------------------------------------------
@@ -113,7 +113,7 @@ class BelongsToMany
 
         $attrs = array($this->foreign => $value);
 
-        $attrs[$this->relatedKey] = $id;
+        $attrs[$this->related] = $id;
 
         $attrs = array_merge($attrs, $data);
 
@@ -160,7 +160,7 @@ class BelongsToMany
         foreach ($rows as $row)
         {
             /** @var string */
-            $rid = $row[$this->relatedKey];
+            $rid = $row[$this->related];
 
             $ids[] = $rid;
 
@@ -172,10 +172,10 @@ class BelongsToMany
             return array();
         }
 
-        $related = $this->related;
+        $class = $this->class;
 
         /** @var \Rougin\Ezekiel\Active\Model */
-        $query = new $related;
+        $query = new $class;
 
         $models = $query->whereIn('id', $ids)->get();
 

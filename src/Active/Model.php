@@ -195,28 +195,28 @@ class Model
     }
 
     /**
-     * @param string      $related
+     * @param string      $class
      * @param string|null $foreign
      * @param string|null $owner
      *
      * @return \Rougin\Ezekiel\Active\Relations\BelongsTo
      */
-    public function belongsTo($related, $foreign = null, $owner = null)
+    public function belongsTo($class, $foreign = null, $owner = null)
     {
-        return new BelongsTo($this, $related, $foreign, $owner);
+        return new BelongsTo($this, $class, $foreign, $owner);
     }
 
     /**
-     * @param string      $related
+     * @param string      $class
      * @param string|null $table
      * @param string|null $foreign
-     * @param string|null $relatedKey
+     * @param string|null $related
      *
      * @return \Rougin\Ezekiel\Active\Relations\BelongsToMany
      */
-    public function belongsToMany($related, $table = null, $foreign = null, $relatedKey = null)
+    public function belongsToMany($class, $table = null, $foreign = null, $related = null)
     {
-        return new BelongsToMany($this, $related, $table, $foreign, $relatedKey);
+        return new BelongsToMany($this, $class, $table, $foreign, $related);
     }
 
     /**
@@ -429,38 +429,38 @@ class Model
     }
 
     /**
-     * @param string      $related
+     * @param string      $class
      * @param string|null $foreign
      * @param string|null $local
      *
      * @return \Rougin\Ezekiel\Active\Relations\HasMany
      */
-    public function hasMany($related, $foreign = null, $local = null)
+    public function hasMany($class, $foreign = null, $local = null)
     {
-        return new HasMany($this, $related, $foreign, $local);
+        return new HasMany($this, $class, $foreign, $local);
     }
 
     /**
-     * @param string      $related
+     * @param string      $class
      * @param string|null $foreign
      * @param string|null $local
      *
      * @return \Rougin\Ezekiel\Active\Relations\HasOne
      */
-    public function hasOne($related, $foreign = null, $local = null)
+    public function hasOne($class, $foreign = null, $local = null)
     {
-        return new HasOne($this, $related, $foreign, $local);
+        return new HasOne($this, $class, $foreign, $local);
     }
 
     /**
-     * @param string $related
+     * @param string $class
      *
      * @return string
      */
-    public function joiningTable($related)
+    public function joiningTable($class)
     {
         /** @var \Rougin\Ezekiel\Active\Model $instance */
-        $instance = new $related;
+        $instance = new $class;
 
         $segments = array($this->getTable(), $instance->getTable());
 
