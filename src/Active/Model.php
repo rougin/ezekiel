@@ -6,24 +6,26 @@ use Rougin\Ezekiel\Active\Relations\BelongsTo;
 use Rougin\Ezekiel\Active\Relations\BelongsToMany;
 use Rougin\Ezekiel\Active\Relations\HasMany;
 use Rougin\Ezekiel\Active\Relations\HasOne;
-use Rougin\Ezekiel\Query;
+use Rougin\Ezekiel\Dialect;
 
 /**
+ * @property object|null $pivot
+ *
  * @package Ezekiel
  *
  * @author Rougin Gutib <rougingutib@gmail.com>
  */
-abstract class Model
+class Model
 {
-    /**
-     * @var string[]
-     */
-    protected $appends = array();
-
     /**
      * @var array<string, mixed>
      */
     protected $attributes = array();
+
+    /**
+     * @var \Rougin\Ezekiel\Active\Builder|null
+     */
+    protected $builder = null;
 
     /**
      * @var array<string, string>
@@ -36,39 +38,24 @@ abstract class Model
     protected $connection = 'default';
 
     /**
+     * @var \Rougin\Ezekiel\Active\Depot|null
+     */
+    protected $depot = null;
+
+    /**
+     * @var string[]
+     */
+    protected $eagers = array();
+
+    /**
      * @var boolean
      */
     protected $exists = false;
 
     /**
-     * @var string[]
+     * @var array<integer, string>
      */
     protected $fillable = array();
-
-    /**
-     * @var string[]
-     */
-    protected $guarded = array('*');
-
-    /**
-     * @var boolean
-     */
-    protected $incrementing = true;
-
-    /**
-     * @var string
-     */
-    protected $keyType = 'int';
-
-    /**
-     * @var array<string, mixed>
-     */
-    protected $original = array();
-
-    /**
-     * @var \PDO|null
-     */
-    protected $pdo;
 
     /**
      * @var string
@@ -83,7 +70,7 @@ abstract class Model
     /**
      * @var boolean
      */
-    protected $softDelete = false;
+    protected $softDeletes = false;
 
     /**
      * @var string|null
@@ -96,37 +83,14 @@ abstract class Model
     protected $timestamps = true;
 
     /**
-     * @var boolean
-     */
-    protected $wasRecentlyCreated = false;
-
-    /**
-     * @var string[]
-     */
-    protected $with = array();
-
-    /**
-     * @param string       $method
-     * @param array<mixed> $parameters
+     * @param string $name
+     * @param \PDO   $pdo
      *
-     * @return mixed
+     * @return void
      */
-    public function __call($method, $parameters)
+    public static function setPdo($name, \PDO $pdo)
     {
-        $query = $this->newQuery();
-
-        /** @var callable $callback */
-        $callback = array($query, $method);
-
-        return call_user_func_array($callback, $parameters);
-    }
-
-    /**
-     * @param array<string, mixed> $attrs
-     */
-    public function __construct(array $attrs = array())
-    {
-        $this->fill($attrs);
+        Manager::set($name, $pdo);
     }
 
     /**
@@ -136,7 +100,66 @@ abstract class Model
      */
     public function __get($key)
     {
-        return $this->getAttribute($key);
+        $method = 'get' . $this->studly($key) . 'Attribute';
+
+        if (method_exists($this, $method))
+        {
+            $value = array_key_exists($key, $this->attributes) ? $this->attributes[$key] : null;
+
+            return $this->$method($value);
+        }
+
+        // Check cached relations first ------
+        if (array_key_exists($key, $this->relations))
+        {
+            return $this->relations[$key];
+        }
+        // -----------------------------------
+
+        if (method_exists($this, $key))
+        {
+            $relation = $this->$key();
+
+            if ($relation instanceof BelongsToMany)
+            {
+                $this->relations[$key] = $relation->getAll();
+
+                return $this->relations[$key];
+            }
+
+            if ($relation instanceof HasMany)
+            {
+                $this->relations[$key] = $relation->getResults();
+
+                return $this->relations[$key];
+            }
+
+            if ($relation instanceof HasOne || $relation instanceof BelongsTo)
+            {
+                $this->relations[$key] = $relation->getResults();
+
+                return $this->relations[$key];
+            }
+
+            return $relation;
+        }
+
+        if (array_key_exists($key, $this->attributes))
+        {
+            return $this->cast($key, $this->attributes[$key]);
+        }
+
+        return null;
+    }
+
+    /**
+     * @param string $key
+     *
+     * @return boolean
+     */
+    public function __isset($key)
+    {
+        return array_key_exists($key, $this->attributes);
     }
 
     /**
@@ -147,309 +170,177 @@ abstract class Model
      */
     public function __set($key, $value)
     {
-        $this->setAttribute($key, $value);
+        $this->attributes[$key] = $value;
     }
 
     /**
-     * @param string      $related
-     * @param string|null $foreignKey
-     * @param string|null $ownerKey
+     * Returns all models.
      *
-     * @return \Rougin\Ezekiel\Active\Relations\BelongsTo
+     * @return static[]
      */
-    public function belongsTo($related, $foreignKey = null, $ownerKey = null)
+    public function all()
     {
-        return new BelongsTo($this, $related, $foreignKey, $ownerKey);
+        return $this->get();
     }
 
     /**
-     * @param string      $related
-     * @param string|null $table
-     * @param string|null $foreignPivotKey
-     * @param string|null $relatedPivotKey
-     * @param string|null $parentKey
-     * @param string|null $relatedKey
+     * Returns the total record count.
      *
-     * @return \Rougin\Ezekiel\Active\Relations\BelongsToMany
+     * @return integer
      */
-    public function belongsToMany(
-        $related,
-        $table = null,
-        $foreignPivotKey = null,
-        $relatedPivotKey = null,
-        $parentKey = null,
-        $relatedKey = null
-    ) {
-        /** @var \Rougin\Ezekiel\Active\Model $instance */
-        $instance = new $related;
-
-        if (is_null($table))
-        {
-            $table = $this->joiningTable($related);
-        }
-
-        if (is_null($foreignPivotKey))
-        {
-            $foreignPivotKey = $this->getForeignKey();
-        }
-
-        if (is_null($relatedPivotKey))
-        {
-            $relatedPivotKey = $instance->getForeignKey();
-        }
-
-        if (is_null($parentKey))
-        {
-            $parentKey = $this->getKeyName();
-        }
-
-        if (is_null($relatedKey))
-        {
-            $relatedKey = $instance->getKeyName();
-        }
-
-        return new BelongsToMany(
-            $this,
-            $related,
-            $table,
-            $foreignPivotKey,
-            $relatedPivotKey,
-            $parentKey,
-            $relatedKey
-        );
-    }
-
-    /**
-     * @param string $key
-     * @param mixed  $value
-     *
-     * @return mixed
-     */
-    protected function castAttribute($key, $value)
+    public function count()
     {
-        if ($value === null)
-        {
-            return null;
-        }
-
-        if (! isset($this->casts[$key]))
-        {
-            return $value;
-        }
-
-        $type = $this->casts[$key];
-
-        if ($type === 'integer' || $type === 'int')
-        {
-            return (int) $value;
-        }
-
-        if ($type === 'boolean' || $type === 'bool')
-        {
-            return (bool) $value;
-        }
-
-        if ($type === 'float' || $type === 'double' || $type === 'real')
-        {
-            return (float) $value;
-        }
-
-        if ($type === 'string')
-        {
-            return (string) $value;
-        }
-
-        return $value;
+        return $this->getDepot()->count($this->getBuilder());
     }
 
     /**
-     * @return boolean|null
+     * @param array<string, mixed> $data
+     *
+     * @return static
+     */
+    public function create($data)
+    {
+        $instance = $this->newInstance();
+
+        $data = $instance->guard($data);
+
+        if ($instance->timestamps)
+        {
+            $stamp = date('Y-m-d H:i:s');
+
+            $data['created_at'] = $stamp;
+
+            $data['updated_at'] = $stamp;
+        }
+
+        $table = $instance->getTable();
+
+        $id = $this->getDepot()->insert($table, $data);
+
+        $data[$instance->primaryKey] = $id;
+
+        $instance->attributes = $data;
+
+        $instance->exists = true;
+
+        return $instance;
+    }
+
+    /**
+     * @return boolean
      */
     public function delete()
     {
-        if (! $this->exists)
-        {
-            return null;
-        }
+        $pk = $this->primaryKey;
 
-        if ($this->softDelete)
-        {
-            return $this->runSoftDelete();
-        }
+        $id = $this->attributes[$pk];
 
-        return $this->runHardDelete();
+        $table = $this->getTable();
+
+        $depot = $this->getDepot();
+
+        return $depot->deleteRow($table, $pk, $id, $this->softDeletes);
     }
 
     /**
-     * @param array<string, mixed> $attrs
-     *
-     * @return $this
+     * @return boolean
      */
-    public function fill(array $attrs)
+    public function exists()
     {
-        foreach ($attrs as $key => $value)
+        return $this->count() > 0;
+    }
+
+    /**
+     * @param integer $id
+     *
+     * @return static|null
+     */
+    public function find($id)
+    {
+        return $this->where('id', $id)->first();
+    }
+
+    /**
+     * @param integer $id
+     *
+     * @return static
+     * @throws \UnexpectedValueException
+     */
+    public function findOrFail($id)
+    {
+        return $this->where('id', $id)->firstOrFail();
+    }
+
+    /**
+     * @return static|null
+     */
+    public function first()
+    {
+        $this->getBuilder()->limit(1);
+
+        $results = $this->get();
+
+        return $results ? $results[0] : null;
+    }
+
+    /**
+     * @return static
+     * @throws \UnexpectedValueException
+     */
+    public function firstOrFail()
+    {
+        $result = $this->first();
+
+        if ($result === null)
         {
-            if ($this->isFillable($key))
+            $error = 'No record found';
+
+            throw new \UnexpectedValueException($error);
+        }
+
+        return $result;
+    }
+
+    /**
+     * @return static[]
+     */
+    public function get()
+    {
+        $builder = $this->getBuilder();
+
+        $depot = $this->getDepot();
+
+        $rows = $depot->get($builder);
+
+        $results = $this->hydrate($rows);
+
+        // Triggers "__get" on each model for each ---
+        // eager-loaded relation. The relation is ----
+        // lazily loaded once and cached in the ------
+        // "$this->relations" of the same model. -----
+        if (! empty($this->eagers))
+        {
+            foreach ($results as $model)
             {
-                $this->setAttribute($key, $value);
+                foreach ($this->eagers as $relation)
+                {
+                    $unused = $model->$relation;
+                }
             }
         }
+        // -------------------------------------------
 
-        return $this;
+        $this->reset();
+
+        return $results;
     }
 
     /**
-     * @return boolean|null
-     */
-    public function forceDelete()
-    {
-        return $this->runHardDelete();
-    }
-
-    /**
-     * @param array<string, mixed> $attrs
-     *
-     * @return $this
-     */
-    public function forceFill(array $attrs)
-    {
-        foreach ($attrs as $key => $value)
-        {
-            $this->setAttribute($key, $value);
-        }
-
-        return $this;
-    }
-
-    /**
-     * @param string $key
-     *
      * @return string
-     */
-    protected function getAccessorMethod($key)
-    {
-        $parts = explode('_', $key);
-
-        $camel = '';
-
-        foreach ($parts as $part)
-        {
-            $camel .= ucfirst($part);
-        }
-
-        return 'get' . $camel . 'Attribute';
-    }
-
-    /**
-     * @param string $key
-     *
-     * @return mixed
-     */
-    public function getAttribute($key)
-    {
-        $accessor = $this->getAccessorMethod($key);
-
-        if ($accessor && method_exists($this, $accessor))
-        {
-            $raw = null;
-
-            if (array_key_exists($key, $this->attributes))
-            {
-                $raw = $this->attributes[$key];
-            }
-
-            /** @var callable $callback */
-            $callback = array($this, $accessor);
-
-            return call_user_func($callback, $raw);
-        }
-
-        if (array_key_exists($key, $this->relations))
-        {
-            return $this->relations[$key];
-        }
-
-        $method = $this->getRelationMethod($key);
-
-        if ($method && method_exists($this, $method))
-        {
-            /** @var callable $callback */
-            $callback = array($this, $method);
-
-            /** @var \Rougin\Ezekiel\Active\Relations\Relation $relation */
-            $relation = call_user_func($callback);
-
-            $this->relations[$key] = $relation->getResults();
-
-            return $this->relations[$key];
-        }
-
-        $value = null;
-
-        if (array_key_exists($key, $this->attributes))
-        {
-            $value = $this->attributes[$key];
-        }
-
-        return $this->castAttribute($key, $value);
-    }
-
-    /**
-     * @return array<string, mixed>
-     */
-    protected function getAttributesForSave()
-    {
-        return $this->attributes;
-    }
-
-    /**
-     * @return string|null
      */
     public function getConnectionName()
     {
         return $this->connection;
-    }
-
-    /**
-     * @return string
-     */
-    public function getCreatedAtColumn()
-    {
-        $result = defined('static::CREATED_AT') ? static::CREATED_AT : 'created_at';
-
-        return (string) $result;
-    }
-
-    /**
-     * @return string
-     */
-    public function getDeletedAtColumn()
-    {
-        $result = defined('static::DELETED_AT') ? static::DELETED_AT : 'deleted_at';
-
-        return (string) $result;
-    }
-
-    /**
-     * @return array<string, mixed>
-     */
-    protected function getDirty()
-    {
-        $dirty = array();
-
-        foreach ($this->attributes as $key => $value)
-        {
-            if (! array_key_exists($key, $this->original))
-            {
-                $dirty[$key] = $value;
-            }
-            elseif ($value !== $this->original[$key])
-            {
-                $dirty[$key] = $value;
-            }
-        }
-
-        return $dirty;
     }
 
     /**
@@ -467,21 +358,11 @@ abstract class Model
     }
 
     /**
-     * @return boolean
-     */
-    public function getIncrementing()
-    {
-        return $this->incrementing;
-    }
-
-    /**
-     * @return mixed
+     * @return string
      */
     public function getKey()
     {
-        $key = $this->getKeyName();
-
-        return isset($this->attributes[$key]) ? $this->attributes[$key] : null;
+        return $this->primaryKey;
     }
 
     /**
@@ -493,64 +374,13 @@ abstract class Model
     }
 
     /**
-     * @return string
-     */
-    public function getKeyType()
-    {
-        return $this->keyType;
-    }
-
-    /**
-     * @param string $key
-     *
-     * @return string
-     */
-    protected function getMutatorMethod($key)
-    {
-        $parts = explode('_', $key);
-
-        $camel = '';
-
-        foreach ($parts as $part)
-        {
-            $camel .= ucfirst($part);
-        }
-
-        return 'set' . $camel . 'Attribute';
-    }
-
-    /**
-     * @return \PDO|null
+     * @return \PDO
      */
     public function getPdo()
     {
-        return $this->pdo;
-    }
+        $manager = new Manager;
 
-    /**
-     * @return string
-     */
-    public function getQualifiedDeletedAtColumn()
-    {
-        return $this->qualifyColumn($this->getDeletedAtColumn());
-    }
-
-    /**
-     * @return string
-     */
-    public function getQualifiedKeyName()
-    {
-        return $this->qualifyColumn($this->getKeyName());
-    }
-
-    /**
-     * @param string $key
-     *
-     * @return string|null
-     */
-    protected function getRelationMethod($key)
-    {
-        return method_exists($this, $key) ? $key : null;
+        return $manager->get($this->connection);
     }
 
     /**
@@ -563,29 +393,192 @@ abstract class Model
             return $this->table;
         }
 
-        $class = get_class($this);
+        // Guess table based on class name ------
+        $parts = explode('\\', get_class($this));
 
-        $parts = explode('\\', $class);
-
-        $base = end($parts);
-
-        $raw = preg_replace('/([A-Z])/', '_$1', lcfirst($base));
-
-        $snake = strtolower((string) $raw);
-
-        $snake = ltrim($snake, '_');
-
-        return $snake . 's';
+        return strtolower(end($parts)) . 's';
+        // --------------------------------------
     }
 
     /**
-     * @return string
+     * @param integer $value
+     *
+     * @return static
      */
-    public function getUpdatedAtColumn()
+    public function limit($value)
     {
-        $result = defined('static::UPDATED_AT') ? static::UPDATED_AT : 'updated_at';
+        $this->getBuilder()->limit($value);
 
-        return (string) $result;
+        return $this;
+    }
+
+    /**
+     * @param integer $value
+     *
+     * @return static
+     */
+    public function offset($value)
+    {
+        $this->getBuilder()->offset($value);
+
+        return $this;
+    }
+
+    /**
+     * @param string $column
+     * @param string $operator
+     * @param mixed  $value
+     *
+     * @return static
+     */
+    public function orWhere($column, $operator, $value)
+    {
+        $builder = $this->getBuilder();
+
+        $builder->orWhere($column, $operator, $value);
+
+        return $this;
+    }
+
+    /**
+     * @return boolean
+     */
+    public function save()
+    {
+        if ($this->timestamps && ! array_key_exists('updated_at', $this->attributes))
+        {
+            $this->attributes['updated_at'] = date('Y-m-d H:i:s');
+        }
+
+        if (! $this->exists)
+        {
+            $instance = $this->create($this->attributes);
+
+            $this->attributes = $instance->attributes;
+
+            $this->exists = true;
+
+            return true;
+        }
+
+        $data = $this->attributes;
+
+        $pk = $this->primaryKey;
+
+        $id = $data[$pk];
+
+        unset($data[$pk]);
+
+        $depot = $this->getDepot();
+
+        $table = $this->getTable();
+
+        $result = $depot->updateRow($table, $pk, $id, $data);
+
+        $this->attributes[$pk] = $id;
+
+        return $result;
+    }
+
+    /**
+     * @param object $data
+     *
+     * @return void
+     */
+    public function setPivot($data)
+    {
+        $this->pivot = $data;
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    public function toArray()
+    {
+        return $this->attributes;
+    }
+
+    /**
+     * @param array<string, mixed> $data
+     *
+     * @return boolean
+     */
+    public function update($data)
+    {
+        foreach ($data as $key => $value)
+        {
+            $this->$key = $value;
+        }
+
+        return $this->save();
+    }
+
+    /**
+     * @param string $column
+     * @param mixed  $value
+     *
+     * @return static
+     */
+    public function where($column, $value)
+    {
+        $this->getBuilder()->where($column, $value);
+
+        return $this;
+    }
+
+    /**
+     * @param string  $column
+     * @param mixed[] $values
+     *
+     * @return static
+     */
+    public function whereIn($column, $values)
+    {
+        $this->getBuilder()->whereIn($column, $values);
+
+        return $this;
+    }
+
+    /**
+     * @param string|string[] $relations
+     *
+     * @return static
+     */
+    public function with($relations)
+    {
+        if (is_string($relations))
+        {
+            $relations = array($relations);
+        }
+
+        $this->eagers = array_merge($this->eagers, $relations);
+
+        return $this;
+    }
+
+    /**
+     * @param string      $related
+     * @param string|null $foreign
+     * @param string|null $owner
+     *
+     * @return \Rougin\Ezekiel\Active\Relations\BelongsTo
+     */
+    public function belongsTo($related, $foreign = null, $owner = null)
+    {
+        return new BelongsTo($this, $related, $foreign, $owner);
+    }
+
+    /**
+     * @param string      $related
+     * @param string|null $table
+     * @param string|null $foreignKey
+     * @param string|null $relatedKey
+     *
+     * @return \Rougin\Ezekiel\Active\Relations\BelongsToMany
+     */
+    public function belongsToMany($related, $table = null, $foreignKey = null, $relatedKey = null)
+    {
+        return new BelongsToMany($this, $related, $table, $foreignKey, $relatedKey);
     }
 
     /**
@@ -613,26 +606,6 @@ abstract class Model
     }
 
     /**
-     * @param string $key
-     *
-     * @return boolean
-     */
-    public function isFillable($key)
-    {
-        if (in_array($key, $this->fillable, true))
-        {
-            return true;
-        }
-
-        if ($this->guarded === array('*'))
-        {
-            return false;
-        }
-
-        return ! in_array($key, $this->guarded, true);
-    }
-
-    /**
      * @param string $related
      *
      * @return string
@@ -650,364 +623,188 @@ abstract class Model
     }
 
     /**
-     * @return \Rougin\Ezekiel\Active\Builder
-     */
-    public function newQuery()
-    {
-        $builder = new Builder(get_class($this), $this->pdo, $this->getTable());
-
-        if ($this->softDelete)
-        {
-            $builder->whereNull($this->getDeletedAtColumn());
-        }
-
-        return $builder;
-    }
-
-    /**
-     * @return \Rougin\Ezekiel\Active\Builder
-     */
-    protected function newQueryWithoutScopes()
-    {
-        return new Builder(get_class($this), $this->pdo, $this->getTable());
-    }
-
-    /**
-     * @return boolean
-     */
-    protected function performInsert()
-    {
-        if (! $this->pdo)
-        {
-            return false;
-        }
-
-        /** @var \PDO $execPdo */
-        $execPdo = $this->pdo;
-
-        $query = new Query;
-
-        $insert = $query->insertInto($this->getTable());
-
-        $data = $this->getAttributesForSave();
-
-        if ($this->usesTimestamps())
-        {
-            $now = date('Y-m-d H:i:s');
-
-            $data[$this->getCreatedAtColumn()] = $now;
-
-            $data[$this->getUpdatedAtColumn()] = $now;
-
-            $this->setAttribute($this->getCreatedAtColumn(), $now);
-
-            $this->setAttribute($this->getUpdatedAtColumn(), $now);
-        }
-
-        $insert->values($data);
-
-        $sql = $query->toSql();
-
-        $binds = array_values($query->getBinds());
-
-        $stmt = $execPdo->prepare($sql);
-
-        $stmt->execute($binds);
-
-        if ($this->getIncrementing())
-        {
-            $id = $execPdo->lastInsertId();
-
-            if ($this->getKeyType() === 'int' || $this->getKeyType() === 'integer')
-            {
-                $id = (int) $id;
-            }
-
-            $this->setAttribute($this->getKeyName(), $id);
-        }
-
-        $this->exists = true;
-
-        $this->wasRecentlyCreated = true;
-
-        $this->syncOriginal();
-
-        return true;
-    }
-
-    /**
-     * @return boolean
-     */
-    protected function performUpdate()
-    {
-        if (! $this->pdo)
-        {
-            return false;
-        }
-
-        /** @var \PDO $execPdo */
-        $execPdo = $this->pdo;
-
-        $dirty = $this->getDirty();
-
-        if (empty($dirty))
-        {
-            return true;
-        }
-
-        if ($this->usesTimestamps())
-        {
-            $now = date('Y-m-d H:i:s');
-
-            $dirty[$this->getUpdatedAtColumn()] = $now;
-
-            $this->setAttribute($this->getUpdatedAtColumn(), $now);
-        }
-
-        $query = new Query;
-
-        $query->update($this->getTable());
-
-        foreach ($dirty as $key => $value)
-        {
-            $query->set($key, $value);
-        }
-
-        $query->where($this->getKeyName())->equals($this->getKey());
-
-        $sql = $query->toSql();
-
-        $binds = array_values($query->getBinds());
-
-        $stmt = $execPdo->prepare($sql);
-
-        $stmt->execute($binds);
-
-        $this->syncOriginal();
-
-        return true;
-    }
-
-    /**
      * @param string $key
+     * @param mixed  $value
      *
-     * @return string
+     * @return mixed
      */
-    public function qualifyColumn($key)
+    protected function cast($key, $value)
     {
-        if (strpos($key, '.') !== false)
+        if ($value === null)
         {
-            return $key;
+            return null;
         }
 
-        return $this->getTable() . '.' . $key;
+        if (! isset($this->casts[$key]))
+        {
+            return $value;
+        }
+
+        $type = $this->casts[$key];
+
+        if ($type === 'integer' || $type === 'int')
+        {
+            return (int) $value;
+        }
+
+        if ($type === 'boolean' || $type === 'bool')
+        {
+            return (bool) $value;
+        }
+
+        if ($type === 'float' || $type === 'double')
+        {
+            return (float) $value;
+        }
+
+        if ($type === 'string')
+        {
+            return (string) $value;
+        }
+
+        return $value;
     }
 
     /**
-     * @param mixed                $id
+     * @return \Rougin\Ezekiel\Active\Builder
+     */
+    protected function getBuilder()
+    {
+        if ($this->builder)
+        {
+            return $this->builder;
+        }
+
+        $table = $this->getTable();
+
+        $pdo = $this->getPdo();
+
+        $sql = Dialect::fromPdo($pdo);
+
+        $this->builder = new Builder($sql, $table);
+
+        if ($this->softDeletes)
+        {
+            $this->builder->useSoftDeletes();
+        }
+
+        return $this->builder;
+    }
+
+    /**
+     * @return \Rougin\Ezekiel\Active\Depot
+     */
+    protected function getDepot()
+    {
+        if ($this->depot)
+        {
+            return $this->depot;
+        }
+
+        $name = $this->connection;
+
+        $manager = new Manager;
+
+        $this->depot = new Depot($manager, $name);
+
+        return $this->depot;
+    }
+
+    /**
      * @param array<string, mixed> $data
      *
-     * @return $this
+     * @return array<string, mixed>
      */
-    public function update($id, array $data)
+    protected function guard($data)
     {
-        $models = $this->where($this->getKeyName(), '=', $id)->get();
+        $items = array();
 
-        if (empty($models))
+        foreach ($data as $key => $value)
         {
-            return $this;
+            if (in_array($key, $this->fillable, true))
+            {
+                $items[$key] = $value;
+            }
         }
 
-        $model = $models[0];
+        return $items;
+    }
 
-        $model->fill($data);
+    /**
+     * @param array<integer, array<string, mixed>> $rows
+     *
+     * @return static[]
+     */
+    protected function hydrate($rows)
+    {
+        $items = array();
 
-        $model->save();
+        foreach ($rows as $row)
+        {
+            $items[] = $this->newInstance($row, true);
+        }
+
+        return $items;
+    }
+
+    /**
+     * @param array<string, mixed> $attributes
+     * @param boolean              $exists
+     *
+     * @return static
+     */
+    protected function newInstance($attributes = array(), $exists = false)
+    {
+        $class = get_class($this);
+
+        /** @var static */
+        $model = new $class;
+
+        $model->attributes = $attributes;
+
+        $model->casts = $this->casts;
+
+        $model->connection = $this->connection;
+
+        $model->exists = $exists;
+
+        $model->fillable = $this->fillable;
+
+        $model->softDeletes = $this->softDeletes;
+
+        $model->table = $this->table;
+
+        $model->timestamps = $this->timestamps;
 
         return $model;
     }
 
     /**
-     * @return boolean
-     */
-    public function restore()
-    {
-        if (! $this->softDelete)
-        {
-            return false;
-        }
-
-        $this->setAttribute($this->getDeletedAtColumn(), null);
-
-        return $this->save();
-    }
-
-    /**
-     * @return boolean
-     */
-    protected function runHardDelete()
-    {
-        if (! $this->pdo)
-        {
-            return false;
-        }
-
-        /** @var \PDO $execPdo */
-        $execPdo = $this->pdo;
-
-        $query = new Query;
-
-        $query->deleteFrom($this->getTable());
-
-        $query->where($this->getKeyName())->equals($this->getKey());
-
-        $sql = $query->toSql();
-
-        $binds = array_values($query->getBinds());
-
-        $stmt = $execPdo->prepare($sql);
-
-        $stmt->execute($binds);
-
-        $this->exists = false;
-
-        return true;
-    }
-
-    /**
-     * @return boolean
-     */
-    protected function runSoftDelete()
-    {
-        $now = date('Y-m-d H:i:s');
-
-        $this->setAttribute($this->getDeletedAtColumn(), $now);
-
-        return $this->save();
-    }
-
-    /**
-     * @return boolean
-     */
-    public function save()
-    {
-        if ($this->exists)
-        {
-            return $this->performUpdate();
-        }
-
-        return $this->performInsert();
-    }
-
-    /**
-     * @param string $key
-     * @param mixed  $value
-     *
      * @return void
      */
-    public function setAttribute($key, $value)
+    protected function reset()
     {
-        $mutator = $this->getMutatorMethod($key);
+        $this->eagers = array();
 
-        if ($mutator && method_exists($this, $mutator))
+        $this->getBuilder()->reset();
+    }
+
+    /**
+     * @param string $value
+     *
+     * @return string
+     */
+    protected function studly($value)
+    {
+        $result = '';
+
+        $parts = explode('_', $value);
+
+        foreach ($parts as $part)
         {
-            /** @var callable $callback */
-            $callback = array($this, $mutator);
-
-            call_user_func($callback, $value);
-
-            return;
+            $result .= ucfirst(strtolower($part));
         }
 
-        $this->attributes[$key] = $value;
-    }
-
-    /**
-     * @param \PDO $pdo
-     *
-     * @return $this
-     */
-    public function setPdo(\PDO $pdo)
-    {
-        $this->pdo = $pdo;
-
-        return $this;
-    }
-
-    /**
-     * @param array<string, mixed> $attributes
-     * @param boolean              $sync
-     *
-     * @return $this
-     */
-    public function setRawAttributes(array $attributes, $sync = false)
-    {
-        $this->attributes = $attributes;
-
-        if ($sync)
-        {
-            $this->syncOriginal();
-        }
-
-        $this->exists = true;
-
-        return $this;
-    }
-
-    /**
-     * @param string $relation
-     * @param mixed  $value
-     *
-     * @return void
-     */
-    public function setRelation($relation, $value)
-    {
-        $this->relations[$relation] = $value;
-    }
-
-    /**
-     * @param string $table
-     *
-     * @return $this
-     */
-    public function setTable($table)
-    {
-        $this->table = $table;
-
-        return $this;
-    }
-
-    /**
-     * @return void
-     */
-    protected function syncOriginal()
-    {
-        $this->original = $this->attributes;
-    }
-
-    /**
-     * @return boolean
-     */
-    public function trashed()
-    {
-        $column = $this->getDeletedAtColumn();
-
-        if (! isset($this->attributes[$column]))
-        {
-            return false;
-        }
-
-        /** @var mixed $value */
-        $value = $this->attributes[$column];
-
-        return $value !== null;
-    }
-
-    /**
-     * @return boolean
-     */
-    public function usesTimestamps()
-    {
-        return $this->timestamps;
+        return $result;
     }
 }

@@ -2,8 +2,8 @@
 
 namespace Rougin\Ezekiel\Active;
 
+use Rougin\Ezekiel\DialectInterface;
 use Rougin\Ezekiel\Query;
-use Rougin\Ezekiel\Result;
 
 /**
  * @package Ezekiel
@@ -13,54 +13,29 @@ use Rougin\Ezekiel\Result;
 class Builder
 {
     /**
-     * @var string
+     * @var \Rougin\Ezekiel\DialectInterface
      */
-    protected $class;
+    protected $dialect;
 
     /**
-     * @var string[]
+     * @var integer|null
      */
-    protected $columns = array('*');
+    protected $limit = null;
+
+    /**
+     * @var integer|null
+     */
+    protected $offset = null;
 
     /**
      * @var boolean
      */
-    protected $distinct = false;
-
-    /**
-     * @var string[]
-     */
-    protected $eagers = array();
-
-    /**
-     * @var string[]
-     */
-    protected $groups = array();
-
-    /**
-     * @var integer
-     */
-    protected $limit = 0;
-
-    /**
-     * @var integer
-     */
-    protected $offset = 0;
-
-    /**
-     * @var array<integer, array<string, string>>
-     */
-    protected $orders = array();
-
-    /**
-     * @var \PDO|null
-     */
-    protected $pdo = null;
+    protected $softDeletes = false;
 
     /**
      * @var string
      */
-    protected $table = '';
+    protected $table;
 
     /**
      * @var array<integer, array<string, mixed>>
@@ -68,258 +43,113 @@ class Builder
     protected $wheres = array();
 
     /**
-     * @param string    $class
-     * @param \PDO|null $pdo
-     * @param string    $table
+     * @param \Rougin\Ezekiel\DialectInterface $dialect
+     * @param string                           $table
      */
-    public function __construct($class, \PDO $pdo = null, $table = '')
+    public function __construct(DialectInterface $dialect, $table)
     {
-        $this->class = $class;
-
-        $this->pdo = $pdo;
-
         $this->table = $table;
+
+        $this->dialect = $dialect;
     }
 
     /**
-     * @return integer
+     * @param \Rougin\Ezekiel\Query $query
+     *
+     * @return void
      */
-    public function count()
+    public function filter($query)
     {
-        $model = $this->getModel();
+        $first = true;
 
-        $query = new Query;
-
-        $query->select('COUNT(*) AS aggregate')
-            ->from($model->getTable());
-
-        $this->applyWheresTo($query);
-
-        /** @var \PDO $pdo */
-        $pdo = $this->pdo;
-
-        $result = new Result($pdo);
-
-        /** @var array<string, mixed>|boolean $row */
-        $row = $result->first($query);
-
-        if (is_array($row) && isset($row['aggregate']))
+        if ($this->softDeletes)
         {
-            $val = $row['aggregate'];
+            $query->where('deleted_at')->isNull();
 
-            if (is_numeric($val))
+            $first = false;
+        }
+
+        foreach ($this->wheres as $where)
+        {
+            /** @var string */
+            $type = $where['type'];
+
+            $method = 'where';
+
+            if (! $first)
             {
-                return (int) $val;
+                $method = 'and_where';
             }
+
+            if ($type === 'OR')
+            {
+                $method = 'or_where';
+            }
+
+            /** @var string */
+            $col = $where['column'];
+
+            // [TODO] Improve logic ------------------------------------------
+            $exists = isset($where['comparison']);
+
+            $comparison = $exists ? $where['comparison'] : $where['operator'];
+            // ---------------------------------------------------------------
+
+            /** @var mixed */
+            $value = $where['value'];
+
+            switch ($comparison)
+            {
+                case '=':
+                    $query->$method($col)->equals($value);
+
+                    break;
+                case 'like':
+                case 'LIKE':
+                    /** @var string $value */
+                    $query->$method($col)->like($value);
+
+                    break;
+                case 'in':
+                case 'IN':
+                    /** @var mixed[] $value */
+                    $query->$method($col)->in($value);
+
+                    break;
+                case '!=':
+                    $query->$method($col)->notEqualTo($value);
+
+                    break;
+                case '>':
+                    $query->$method($col)->greaterThan($value);
+
+                    break;
+                case '<':
+                    $query->$method($col)->lessThan($value);
+
+                    break;
+                case '>=':
+                    $query->$method($col)->greaterThanOrEqualTo($value);
+
+                    break;
+                case '<=':
+                    $query->$method($col)->lessThanOrEqualTo($value);
+
+                    break;
+                default:
+                    $query->$method($col)->equals($value);
+
+                    break;
+            }
+
+            $first = false;
         }
-
-        return 0;
-    }
-
-    /**
-     * @param array<string, mixed> $attrs
-     *
-     * @return \Rougin\Ezekiel\Active\Model
-     */
-    public function create(array $attrs = array())
-    {
-        $class = $this->class;
-
-        /** @var \Rougin\Ezekiel\Active\Model $model */
-        $model = new $class;
-
-        if ($this->pdo)
-        {
-            $model->setPdo($this->pdo);
-        }
-
-        if ($this->table)
-        {
-            $model->setTable($this->table);
-        }
-
-        $model->fill($attrs);
-
-        $model->save();
-
-        return $model;
-    }
-
-    /**
-     * @return integer
-     */
-    public function delete()
-    {
-        $model = $this->getModel();
-
-        $query = new Query;
-
-        $query->deleteFrom($model->getTable());
-
-        $this->applyWheresTo($query);
-
-        $sql = $query->toSql();
-
-        $binds = $this->flattenBinds($query->getBinds());
-
-        /** @var \PDO $execPdo */
-        $execPdo = $this->pdo;
-
-        $stmt = $execPdo->prepare($sql);
-
-        $stmt->execute($binds);
-
-        return $stmt->rowCount();
-    }
-
-    /**
-     * @return $this
-     */
-    public function distinct()
-    {
-        $this->distinct = true;
-
-        return $this;
-    }
-
-    /**
-     * @param mixed           $id
-     * @param string|string[] $columns
-     *
-     * @return \Rougin\Ezekiel\Active\Model|null
-     */
-    public function find($id, $columns = array('*'))
-    {
-        return $this->where($this->getModel()
-            ->getKeyName(), '=', $id)->first($columns);
-    }
-
-    /**
-     * @param mixed           $id
-     * @param string|string[] $columns
-     *
-     * @return \Rougin\Ezekiel\Active\Model
-     * @throws \RuntimeException
-     */
-    public function findOrFail($id, $columns = array('*'))
-    {
-        $result = $this->find($id, $columns);
-
-        if (is_null($result))
-        {
-            $class = $this->class;
-
-            $idStr = is_scalar($id) ? (string) $id : '?';
-
-            throw new \RuntimeException("No query results for model [$class] with key [$idStr].");
-        }
-
-        return $result;
-    }
-
-    /**
-     * @param string|string[] $columns
-     *
-     * @return \Rougin\Ezekiel\Active\Model|null
-     */
-    public function first($columns = array('*'))
-    {
-        $this->limit(1);
-
-        $items = $this->get($columns);
-
-        if (empty($items))
-        {
-            return null;
-        }
-
-        return reset($items);
-    }
-
-    /**
-     * @param string|string[] $columns
-     *
-     * @return \Rougin\Ezekiel\Active\Model[]
-     */
-    public function get($columns = array('*'))
-    {
-        if (func_num_args() > 0)
-        {
-            $this->columns = is_string($columns) ? array($columns) : $columns;
-        }
-
-        $query = $this->buildSelectQuery();
-
-        /** @var \PDO $execPdo */
-        $execPdo = $this->pdo;
-
-        $result = new Result($execPdo);
-
-        /** @var array<string, mixed>[] $rows */
-        $rows = $result->items($query);
-
-        $models = $this->hydrateModels($rows);
-
-        if (! empty($this->eagers))
-        {
-            $models = $this->eagerLoadRelations($models);
-        }
-
-        return $models;
-    }
-
-    /**
-     * @return string[]
-     */
-    public function getEagers()
-    {
-        return $this->eagers;
-    }
-
-    /**
-     * @return \Rougin\Ezekiel\Active\Model
-     */
-    public function getModel()
-    {
-        $class = $this->class;
-
-        /** @var \Rougin\Ezekiel\Active\Model $model */
-        $model = new $class;
-
-        if ($this->table)
-        {
-            $model->setTable($this->table);
-        }
-
-        if ($this->pdo)
-        {
-            $model->setPdo($this->pdo);
-        }
-
-        return $model;
-    }
-
-    /**
-     * @param string|string[] $groups
-     *
-     * @return $this
-     */
-    public function groupBy($groups)
-    {
-        if (is_string($groups))
-        {
-            $groups = array($groups);
-        }
-
-        $this->groups = $groups;
-
-        return $this;
     }
 
     /**
      * @param integer $value
      *
-     * @return $this
+     * @return self
      */
     public function limit($value)
     {
@@ -329,9 +159,21 @@ class Builder
     }
 
     /**
+     * @return \Rougin\Ezekiel\Query
+     */
+    public function newQuery()
+    {
+        $query = new Query;
+
+        $query->setDialect($this->dialect);
+
+        return $query;
+    }
+
+    /**
      * @param integer $value
      *
-     * @return $this
+     * @return self
      */
     public function offset($value)
     {
@@ -341,126 +183,109 @@ class Builder
     }
 
     /**
-     * @param callable|string $column
-     * @param string|null     $operator
-     * @param mixed|null      $value
+     * @param string $column
+     * @param string $operator
+     * @param mixed  $value
      *
-     * @return $this
+     * @return self
      */
-    public function orWhere($column, $operator = null, $value = null)
+    public function orWhere($column, $operator, $value)
     {
-        return $this->where($column, $operator, $value, 'or');
+        $this->wheres[] = array(
+            'type' => 'OR',
+            'column' => $column,
+            'operator' => $operator,
+            'value' => $value
+        );
+
+        return $this;
+    }
+
+    /**
+     * @return void
+     */
+    public function reset()
+    {
+        $this->limit = null;
+
+        $this->offset = null;
+
+        $this->wheres = array();
+    }
+
+    /**
+     * @return \Rougin\Ezekiel\Query
+     */
+    public function toCountQuery()
+    {
+        $query = $this->newQuery();
+
+        $select = array('COUNT(*)');
+
+        $query->select($select)->from($this->table);
+
+        $this->filter($query);
+
+        return $query;
+    }
+
+    /**
+     * @return \Rougin\Ezekiel\Query
+     */
+    public function toQuery()
+    {
+        $query = $this->newQuery();
+
+        $query->select('*')->from($this->table);
+
+        $this->filter($query);
+
+        if ($this->limit === null)
+        {
+            return $query;
+        }
+
+        $limit = $this->limit;
+
+        $offset = 0;
+
+        if ($this->offset !== null)
+        {
+            $offset = $this->offset;
+        }
+
+        return $query->limit($limit, $offset);
+    }
+
+    /**
+     * @param boolean $flag
+     *
+     * @return self
+     */
+    public function useSoftDeletes($flag = true)
+    {
+        $this->softDeletes = $flag;
+
+        return $this;
     }
 
     /**
      * @param string $column
-     * @param string $direction
+     * @param mixed  $value
      *
-     * @return $this
+     * @return self
      */
-    public function orderBy($column, $direction = 'asc')
+    public function where($column, $value)
     {
-        $this->orders[] = array(
-            'column' => $column,
-            'direction' => $direction,
-        );
+        $item = array('type' => 'AND');
 
-        return $this;
-    }
+        $item['column'] = $column;
 
-    /**
-     * @param string|string[] $columns
-     *
-     * @return $this
-     */
-    public function select($columns = array('*'))
-    {
-        if (is_string($columns))
-        {
-            $columns = array($columns);
-        }
+        $item['operator'] = '=';
 
-        $this->columns = $columns;
+        $item['value'] = $value;
 
-        return $this;
-    }
-
-    /**
-     * @param array<string, mixed> $values
-     *
-     * @return integer
-     */
-    public function update(array $values)
-    {
-        $query = new Query;
-
-        $query->update($this->getModel()->getTable());
-
-        foreach ($values as $key => $value)
-        {
-            $query->set($key, $value);
-        }
-
-        $this->applyWheresTo($query);
-
-        $sql = $query->toSql();
-
-        $binds = $this->flattenBinds($query->getBinds());
-
-        /** @var \PDO $execPdo */
-        $execPdo = $this->pdo;
-
-        $stmt = $execPdo->prepare($sql);
-
-        $stmt->execute($binds);
-
-        return $stmt->rowCount();
-    }
-
-    /**
-     * @param callable|string|string[] $column
-     * @param string|null              $operator
-     * @param mixed|null               $value
-     * @param string                   $boolean
-     *
-     * @return $this
-     */
-    public function where($column, $operator = null, $value = null, $boolean = 'and')
-    {
-        if (is_callable($column))
-        {
-            $query = new self($this->class, $this->pdo, $this->table);
-
-            call_user_func($column, $query);
-
-            $this->wheres[] = array(
-                'type' => 'nested',
-                'query' => $query,
-                'boolean' => $boolean,
-            );
-
-            return $this;
-        }
-
-        if (func_num_args() === 2)
-        {
-            $value = $operator;
-
-            $operator = '=';
-        }
-
-        if (is_null($operator))
-        {
-            $operator = '=';
-        }
-
-        $this->wheres[] = array(
-            'type' => 'basic',
-            'column' => $column,
-            'operator' => $operator,
-            'value' => $value,
-            'boolean' => $boolean,
-        );
+        $this->wheres[] = $item;
 
         return $this;
     }
@@ -468,470 +293,23 @@ class Builder
     /**
      * @param string  $column
      * @param mixed[] $values
-     * @param string  $boolean
-     * @param boolean $not
      *
-     * @return $this
+     * @return self
      */
-    public function whereIn($column, $values, $boolean = 'and', $not = false)
+    public function whereIn($column, $values)
     {
-        $type = $not ? 'not_in' : 'in';
+        $item = array('type' => 'AND');
 
-        $this->wheres[] = array(
-            'type' => $type,
-            'column' => $column,
-            'values' => $values,
-            'boolean' => $boolean,
-        );
+        $item['column'] = $column;
+
+        $item['operator'] = '=';
+
+        $item['comparison'] = 'in';
+
+        $item['value'] = $values;
+
+        $this->wheres[] = $item;
 
         return $this;
-    }
-
-    /**
-     * @param string $column
-     *
-     * @return $this
-     */
-    public function whereNotNull($column)
-    {
-        return $this->whereNull($column, 'and', true);
-    }
-
-    /**
-     * @param string  $column
-     * @param string  $boolean
-     * @param boolean $not
-     *
-     * @return $this
-     */
-    public function whereNull($column, $boolean = 'and', $not = false)
-    {
-        $type = $not ? 'not_null' : 'null';
-
-        $this->wheres[] = array(
-            'type' => $type,
-            'column' => $column,
-            'boolean' => $boolean,
-        );
-
-        return $this;
-    }
-
-    /**
-     * @param string|string[] $relations
-     *
-     * @return $this
-     */
-    public function with($relations)
-    {
-        if (is_string($relations))
-        {
-            $relations = explode(',', $relations);
-        }
-
-        foreach ($relations as $name)
-        {
-            $name = trim($name);
-
-            if (! in_array($name, $this->eagers, true))
-            {
-                $this->eagers[] = $name;
-            }
-        }
-
-        return $this;
-    }
-
-    /**
-     * @param \Rougin\Ezekiel\Query $query
-     * @param array<string, mixed>  $where
-     * @param string                $boolean
-     * @param integer               $index
-     *
-     * @return void
-     */
-    protected function applyBasicWhere(Query $query, array $where, $boolean, $index)
-    {
-        /** @var string $column */
-        $column = $where['column'];
-
-        $operator = $where['operator'];
-
-        $value = $where['value'];
-
-        if ($index === 0)
-        {
-            $comparison = $query->where($column);
-        }
-
-        if ($index !== 0 && $boolean === 'or')
-        {
-            $comparison = $query->orWhere($column);
-        }
-
-        if ($index !== 0 && $boolean !== 'or')
-        {
-            $comparison = $query->andWhere($column);
-        }
-
-        if (! isset($comparison))
-        {
-            return;
-        }
-
-        if ($operator === '=')
-        {
-            $comparison->equals($value);
-        }
-
-        if ($operator === '!=' || $operator === '<>')
-        {
-            $comparison->notEqualTo($value);
-        }
-
-        if ($operator === '>')
-        {
-            $comparison->greaterThan($value);
-        }
-
-        if ($operator === '>=')
-        {
-            $comparison->greaterThanOrEqualTo($value);
-        }
-
-        if ($operator === '<')
-        {
-            $comparison->lessThan($value);
-        }
-
-        if ($operator === '<=')
-        {
-            $comparison->lessThanOrEqualTo($value);
-        }
-
-        if ($operator === 'like' || $operator === 'LIKE')
-        {
-            /** @var string $value */
-            $comparison->like($value);
-        }
-
-        if ($operator === 'not like' || $operator === 'NOT LIKE')
-        {
-            /** @var string $value */
-            $comparison->notLike($value);
-        }
-    }
-
-    /**
-     * @param \Rougin\Ezekiel\Query $query
-     * @param array<string, mixed>  $where
-     * @param string                $boolean
-     * @param boolean               $not
-     * @param integer               $index
-     *
-     * @return void
-     */
-    protected function applyInWhere(Query $query, array $where, $boolean, $not, $index)
-    {
-        /** @var string $column */
-        $column = $where['column'];
-
-        /** @var mixed[] */
-        $values = $where['values'];
-
-        if ($index === 0)
-        {
-            $comparison = $query->where($column);
-        }
-        elseif ($boolean === 'or')
-        {
-            $comparison = $query->orWhere($column);
-        }
-        else
-        {
-            $comparison = $query->andWhere($column);
-        }
-
-        if ($not)
-        {
-            $comparison->notIn($values);
-        }
-        else
-        {
-            $comparison->in($values);
-        }
-    }
-
-    /**
-     * @param \Rougin\Ezekiel\Query $query
-     * @param array<string, mixed>  $where
-     * @param string                $boolean
-     * @param boolean               $not
-     * @param integer               $index
-     *
-     * @return void
-     */
-    protected function applyNullWhere(Query $query, array $where, $boolean, $not, $index)
-    {
-        /** @var string $column */
-        $column = $where['column'];
-
-        if ($index === 0)
-        {
-            $comparison = $query->where($column);
-        }
-        elseif ($boolean === 'or')
-        {
-            $comparison = $query->orWhere($column);
-        }
-        else
-        {
-            $comparison = $query->andWhere($column);
-        }
-
-        if ($not)
-        {
-            $comparison->isNotNull();
-        }
-        else
-        {
-            $comparison->isNull();
-        }
-    }
-
-    /**
-     * @param \Rougin\Ezekiel\Query $query
-     *
-     * @return void
-     */
-    protected function applyOrdersTo(Query $query)
-    {
-        $first = true;
-
-        foreach ($this->orders as $order)
-        {
-            $column = $order['column'];
-
-            $direction = $order['direction'];
-
-            if ($first)
-            {
-                $orderBy = $query->orderBy($column);
-            }
-            else
-            {
-                $orderBy = $query->andOrderBy($column);
-            }
-
-            if (strtolower($direction) === 'desc')
-            {
-                $orderBy->desc();
-            }
-            else
-            {
-                $orderBy->asc();
-            }
-
-            $first = false;
-        }
-    }
-
-    /**
-     * @param \Rougin\Ezekiel\Query $query
-     *
-     * @return void
-     */
-    protected function applyWheresTo(Query $query)
-    {
-        foreach ($this->wheres as $index => $where)
-        {
-            $type = isset($where['type']) ? $where['type'] : null;
-
-            /** @var string $boolean */
-            $boolean = isset($where['boolean']) ? $where['boolean'] : 'and';
-
-            if ($type === 'basic')
-            {
-                $this->applyBasicWhere($query, $where, $boolean, $index);
-            }
-
-            if ($type === 'in')
-            {
-                $this->applyInWhere($query, $where, $boolean, false, $index);
-            }
-
-            if ($type === 'not_in')
-            {
-                $this->applyInWhere($query, $where, $boolean, true, $index);
-            }
-
-            if ($type === 'null')
-            {
-                $this->applyNullWhere($query, $where, $boolean, false, $index);
-            }
-
-            if ($type === 'not_null')
-            {
-                $this->applyNullWhere($query, $where, $boolean, true, $index);
-            }
-        }
-    }
-
-    /**
-     * @return \Rougin\Ezekiel\Query
-     */
-    protected function buildSelectQuery()
-    {
-        $model = $this->getModel();
-
-        $table = $model->getTable();
-
-        $columns = $this->columns;
-
-        if (in_array('*', $columns, true))
-        {
-            $columns = array($table . '.*');
-        }
-
-        $query = new Query;
-
-        $select = $query->select(implode(', ', $columns));
-
-        if ($this->distinct)
-        {
-            $select->distinct();
-        }
-
-        $select->from($table);
-
-        $this->applyWheresTo($query);
-
-        if (! empty($this->groups))
-        {
-            $query->groupBy($this->groups);
-        }
-
-        if (! empty($this->orders))
-        {
-            $this->applyOrdersTo($query);
-        }
-
-        if ($this->limit > 0)
-        {
-            $query->limit($this->limit, $this->offset);
-        }
-
-        return $query;
-    }
-
-    /**
-     * @param \Rougin\Ezekiel\Active\Model[] $models
-     * @param string                         $name
-     *
-     * @return \Rougin\Ezekiel\Active\Model[]
-     */
-    protected function eagerLoadRelation(array $models, $name)
-    {
-        if (empty($models))
-        {
-            return $models;
-        }
-
-        $first = reset($models);
-
-        if (! method_exists($first, $name))
-        {
-            return $models;
-        }
-
-        /** @var callable $callback */
-        $callback = array($first, $name);
-
-        /** @var \Rougin\Ezekiel\Active\Relations\Relation $relation */
-        $relation = call_user_func($callback);
-
-        $relation->addEagers($models);
-
-        $results = $relation->getEager();
-
-        $relation->match($models, $results, $name);
-
-        return $models;
-    }
-
-    /**
-     * @param \Rougin\Ezekiel\Active\Model[] $models
-     *
-     * @return \Rougin\Ezekiel\Active\Model[]
-     */
-    protected function eagerLoadRelations(array $models)
-    {
-        foreach ($this->eagers as $name)
-        {
-            $models = $this->eagerLoadRelation($models, $name);
-        }
-
-        return $models;
-    }
-
-    /**
-     * @param mixed[] $binds
-     *
-     * @return mixed[]
-     */
-    protected function flattenBinds(array $binds)
-    {
-        $flat = array();
-
-        foreach ($binds as $value)
-        {
-            if (! is_array($value))
-            {
-                $flat[] = $value;
-
-                continue;
-            }
-
-            foreach ($value as $v)
-            {
-                $flat[] = $v;
-            }
-        }
-
-        return $flat;
-    }
-
-    /**
-     * @param array<string, mixed>[] $rows
-     *
-     * @return \Rougin\Ezekiel\Active\Model[]
-     */
-    protected function hydrateModels(array $rows)
-    {
-        $models = array();
-
-        $class = $this->class;
-
-        foreach ($rows as $row)
-        {
-            /** @var \Rougin\Ezekiel\Active\Model $model */
-            $model = new $class;
-
-            if ($this->pdo)
-            {
-                $model->setPdo($this->pdo);
-            }
-
-            if ($this->table)
-            {
-                $model->setTable($this->table);
-            }
-
-            $model->setRawAttributes($row, true);
-
-            $models[] = $model;
-        }
-
-        return $models;
     }
 }

@@ -2,31 +2,43 @@
 
 namespace Rougin\Ezekiel\Active\Relations;
 
+use Rougin\Ezekiel\Active\Builder;
+use Rougin\Ezekiel\Active\Depot;
+use Rougin\Ezekiel\Active\Manager;
 use Rougin\Ezekiel\Active\Model;
-use Rougin\Ezekiel\Query;
-use Rougin\Ezekiel\Result;
+use Rougin\Ezekiel\Dialect;
 
 /**
  * @package Ezekiel
  *
  * @author Rougin Gutib <rougingutib@gmail.com>
  */
-class BelongsToMany extends Relation
+class BelongsToMany
 {
     /**
-     * @var string
+     * @var \Rougin\Ezekiel\Active\Depot
      */
-    protected $foreignPivotKey;
+    protected $depot;
 
     /**
      * @var string
      */
-    protected $parentKey;
+    protected $foreignKey;
+
+    /**
+     * @var \Rougin\Ezekiel\Active\Model
+     */
+    protected $parent;
 
     /**
      * @var string[]
      */
-    protected $pivotColumns = array();
+    protected $pivots = array();
+
+    /**
+     * @var string
+     */
+    protected $related;
 
     /**
      * @var string
@@ -34,9 +46,9 @@ class BelongsToMany extends Relation
     protected $relatedKey;
 
     /**
-     * @var string
+     * @var \Rougin\Ezekiel\Active\Model[]
      */
-    protected $relatedPivotKey;
+    protected $results = array();
 
     /**
      * @var string
@@ -46,354 +58,179 @@ class BelongsToMany extends Relation
     /**
      * @var boolean
      */
-    protected $withTimestamps = false;
+    protected $timestamps = false;
 
     /**
      * @param \Rougin\Ezekiel\Active\Model $parent
      * @param string                       $related
-     * @param string                       $table
-     * @param string                       $foreignPivotKey
-     * @param string                       $relatedPivotKey
-     * @param string                       $parentKey
-     * @param string                       $relatedKey
+     * @param string|null                  $table
+     * @param string|null                  $foreignKey
+     * @param string|null                  $relatedKey
      */
-    public function __construct(
-        Model $parent,
-        $related,
-        $table,
-        $foreignPivotKey,
-        $relatedPivotKey,
-        $parentKey,
-        $relatedKey
-    ) {
-        parent::__construct($parent, $related);
+    public function __construct(Model $parent, $related, $table = null, $foreignKey = null, $relatedKey = null)
+    {
+        /** @var \Rougin\Ezekiel\Active\Model */
+        $instance = new $related;
 
-        $this->table = $table;
+        $this->foreignKey = $foreignKey ?: $parent->getForeignKey();
 
-        $this->foreignPivotKey = $foreignPivotKey;
+        $this->parent = $parent;
 
-        $this->relatedPivotKey = $relatedPivotKey;
+        $this->related = $related;
 
-        $this->parentKey = $parentKey;
+        $this->relatedKey = $relatedKey ?: $instance->getForeignKey();
 
-        $this->relatedKey = $relatedKey;
+        $this->table = $table ?: $parent->joiningTable($related);
+
+        $name = $parent->getConnectionName();
+
+        $this->depot = new Depot(new Manager, $name);
     }
 
     /**
-     * @param \Rougin\Ezekiel\Active\Model[] $models
+     * @param integer              $id
+     * @param array<string, mixed> $data
      *
-     * @return void
+     * @return string
      */
-    public function addEagers(array $models)
+    public function attach($id, $data = array())
     {
-        $keys = array();
+        $key = $this->parent->getKey();
 
-        foreach ($models as $model)
-        {
-            $key = $model->getAttribute($this->parentKey);
+        $value = $this->parent->{$key};
 
-            if ($key !== null)
-            {
-                $keys[] = $key;
-            }
-        }
+        $attrs = array($this->foreignKey => $value);
 
-        if (! empty($keys))
-        {
-            $this->query->whereIn(
-                $this->table . '.' . $this->foreignPivotKey,
-                $keys
-            );
-        }
-    }
+        $attrs[$this->relatedKey] = $id;
 
-    /**
-     * @param mixed                $id
-     * @param array<string, mixed> $attrs
-     *
-     * @return void
-     */
-    public function attach($id, array $attrs = array())
-    {
-        $pivotData = array(
-            $this->foreignPivotKey => $this->parent->getKey(),
-            $this->relatedPivotKey => $id,
-        );
+        $attrs = array_merge($attrs, $data);
 
-        $pivotData = array_merge($pivotData, $attrs);
-
-        if ($this->withTimestamps)
+        if ($this->timestamps)
         {
             $now = date('Y-m-d H:i:s');
 
-            $pivotData['created_at'] = $now;
+            $attrs['created_at'] = $now;
 
-            $pivotData['updated_at'] = $now;
+            $attrs['updated_at'] = $now;
         }
 
-        $query = new Query;
-
-        $query->insertInto($this->table)->values($pivotData);
-
-        $sql = $query->toSql();
-
-        $binds = array_values($query->getBinds());
-
-        /** @var \PDO $attachPdo */
-        $attachPdo = $this->parent->getPdo();
-
-        $stmt = $attachPdo->prepare($sql);
-
-        $stmt->execute($binds);
-    }
-
-    /**
-     * @param mixed $id
-     *
-     * @return integer
-     */
-    public function detach($id = null)
-    {
-        $query = new Query;
-
-        $query->deleteFrom($this->table);
-
-        $query->where($this->foreignPivotKey)->equals($this->parent->getKey());
-
-        if ($id !== null)
-        {
-            $query->andWhere($this->relatedPivotKey)->equals($id);
-        }
-
-        $sql = $query->toSql();
-
-        $binds = array_values($query->getBinds());
-
-        /** @var \PDO $detachPdo */
-        $detachPdo = $this->parent->getPdo();
-
-        $stmt = $detachPdo->prepare($sql);
-
-        $stmt->execute($binds);
-
-        return $stmt->rowCount();
+        return $this->depot->insert($this->table, $attrs);
     }
 
     /**
      * @return \Rougin\Ezekiel\Active\Model[]
      */
-    public function getEager()
+    public function getAll()
     {
-        $this->query->whereIn(
-            $this->table . '.' . $this->foreignPivotKey,
-            array($this->parent->getAttribute($this->parentKey))
-        );
+        $key = $this->parent->getKey();
 
-        return $this->performJoin();
-    }
+        $parentValue = $this->parent->{$key};
 
-    /**
-     * @return \Rougin\Ezekiel\Active\Model[]
-     */
-    public function getResults()
-    {
-        if ($this->results === null)
+        // Set the dialect from PDO ------
+        $pdo = $this->parent->getPdo();
+
+        $dialect = Dialect::fromPdo($pdo);
+        // -------------------------------
+
+        $table = $this->table;
+
+        $builder = new Builder($dialect, $table);
+
+        $builder->where($this->foreignKey, $parentValue);
+
+        /** @var array<integer, array<string, string>> */
+        $rows = $this->depot->get($builder);
+
+        $ids = array();
+
+        $maps = array();
+
+        foreach ($rows as $row)
         {
-            $this->results = $this->performJoin();
+            /** @var string */
+            $rid = $row[$this->relatedKey];
+
+            $ids[] = $rid;
+
+            $maps[$rid] = $row;
         }
 
-        /** @var \Rougin\Ezekiel\Active\Model[] $results */
-        $results = $this->results;
-
-        return $results;
-    }
-
-    /**
-     * @param \Rougin\Ezekiel\Active\Model[] $models
-     * @param mixed                          $results
-     * @param string                         $relation
-     *
-     * @return void
-     */
-    public function match(array $models, $results, $relation)
-    {
-        $dictionary = array();
-
-        /** @var \Rougin\Ezekiel\Active\Model[] $resultList */
-        $resultList = is_array($results) ? $results : array();
-
-        foreach ($resultList as $result)
+        if (empty($ids))
         {
-            $pivotKey = $result->getAttribute('_pivotForeignKey');
-
-            /** @var array<int|string, \Rougin\Ezekiel\Active\Model[]> $dictionary */
-
-            if (! isset($dictionary[$pivotKey]))
-            {
-                $dictionary[$pivotKey] = array();
-            }
-
-            $dictionary[$pivotKey][] = $result;
+            return $this->results;
         }
+
+        $related = $this->related;
+
+        /** @var \Rougin\Ezekiel\Active\Model */
+        $query = new $related;
+
+        $models = $query->whereIn('id', $ids)->get();
 
         foreach ($models as $model)
         {
-            $key = $model->getAttribute($this->parentKey);
+            $key = $model->getKey();
 
-            /** @var array<int|string, \Rougin\Ezekiel\Active\Model[]> $dictionary */
+            $rid = $model->{$key};
 
-            $value = isset($dictionary[$key]) ? $dictionary[$key] : array();
+            /** @var string $key */
+            $key = $rid;
 
-            $model->setRelation($relation, $value);
+            /** @var array<string, string> */
+            $data = $maps[$key];
+
+            if (empty($this->pivots))
+            {
+                $model->setPivot((object) $data);
+
+                continue;
+            }
+
+            $filtered = array();
+
+            foreach ($this->pivots as $col)
+            {
+                if (array_key_exists($col, $data))
+                {
+                    $filtered[$col] = $data[$col];
+                }
+            }
+
+            $data = $filtered;
+
+            $model->setPivot((object) $data);
         }
-    }
 
-    /**
-     * @param array<string, mixed> $attrs
-     *
-     * @return void
-     */
-    public function sync(array $attrs)
-    {
+        $this->results = $models;
+
+        return $this->results;
     }
 
     /**
      * @param string|string[] $columns
      *
-     * @return $this
+     * @return self
      */
     public function withPivot($columns)
     {
-        if (is_string($columns))
+        if (! is_array($columns))
         {
-            $columns = array($columns);
+            $columns = func_get_args();
         }
 
-        $this->pivotColumns = array_merge($this->pivotColumns, $columns);
+        /** @var string[] $columns */
+        $this->pivots = $columns;
 
         return $this;
     }
 
     /**
-     * @return $this
+     * @return self
      */
     public function withTimestamps()
     {
-        $this->withTimestamps = true;
-
-        $this->pivotColumns = array_merge(
-            $this->pivotColumns,
-            array('created_at', 'updated_at')
-        );
+        $this->timestamps = true;
 
         return $this;
-    }
-
-    /**
-     * @return \Rougin\Ezekiel\Active\Model[]
-     */
-    protected function performJoin()
-    {
-        $related = $this->getRelated();
-
-        $relatedTable = $related->getTable();
-
-        $pivotDotCols = array();
-
-        foreach ($this->pivotColumns as $col)
-        {
-            $pivotDotCols[] = $this->table . '.' . $col;
-        }
-
-        $pivotDotCols[] = $this->table . '.' . $this->foreignPivotKey;
-
-        $columns = array($relatedTable . '.*');
-
-        $columns = array_merge($columns, $pivotDotCols);
-
-        $allCols = trim(implode(', ', $columns));
-
-        $query = new Query;
-
-        $query->select($allCols)
-            ->from($relatedTable);
-
-        $query->innerJoin($this->table)
-            ->on(
-                $this->table . '.' . $this->relatedPivotKey,
-                $relatedTable . '.' . $this->relatedKey
-            );
-
-        if ($this->parent->getAttribute($this->parentKey))
-        {
-            $query->where($this->table . '.' . $this->foreignPivotKey)
-                ->equals($this->parent->getAttribute($this->parentKey));
-        }
-
-        $pdo = $this->parent->getPdo();
-
-        /** @var \PDO $pdo */
-        $result = new Result($pdo);
-
-        /** @var array<string, mixed>[] $rows */
-        $rows = $result->items($query);
-
-        $models = array();
-
-        $class = $this->related;
-
-        foreach ($rows as $row)
-        {
-            /** @var \Rougin\Ezekiel\Active\Model $model */
-            $model = new $class;
-
-            $pdo = $this->parent->getPdo();
-
-            if ($pdo)
-            {
-                $model->setPdo($pdo);
-            }
-
-            $modelAttributes = array();
-
-            $pivotAttributes = array();
-
-            foreach ($row as $key => $value)
-            {
-                if ($key === $this->foreignPivotKey)
-                {
-                    $model->setAttribute('_pivotForeignKey', $value);
-
-                    continue;
-                }
-
-                if (in_array($key, $this->pivotColumns, true))
-                {
-                    $pivotAttributes[$key] = $value;
-
-                    continue;
-                }
-
-                $modelAttributes[$key] = $value;
-            }
-
-            $model->setRawAttributes($modelAttributes, true);
-
-            if (! empty($pivotAttributes))
-            {
-                $pivot = new \stdClass;
-
-                foreach ($pivotAttributes as $k => $v)
-                {
-                    $pivot->{$k} = $v;
-                }
-
-                $model->setAttribute('_pivot', $pivot);
-            }
-
-            $models[] = $model;
-        }
-
-        return $models;
     }
 }

@@ -20,368 +20,230 @@ class ModelTest extends Testcase
     /**
      * @return void
      */
-    public function test_passed_if_table_name_is_set()
+    public function test_passed_if_delete_on_nonexistent()
     {
-        $expected = 'my_table';
+        $model = new User;
 
-        $model = $this->getMockModel();
+        $model->name = 'Ghost';
 
-        $model->setTable($expected);
+        $triggered = false;
 
-        $this->assertEquals($expected, $model->getTable());
-    }
-
-    /**
-     * @return void
-     */
-    public function test_passed_if_table_is_derived()
-    {
-        $user = new User;
-
-        $this->assertEquals('users', $user->getTable());
-    }
-
-    /**
-     * @return void
-     */
-    public function test_passed_if_key_name_is_returned()
-    {
-        $model = $this->getMockModel();
-
-        $this->assertEquals('id', $model->getKeyName());
-    }
-
-    /**
-     * @return void
-     */
-    public function test_passed_if_key_value_is_returned()
-    {
-        $model = $this->getMockModelWithPdo();
-
-        $model->fill(array('id' => 5, 'name' => 'Test'));
-
-        $this->assertEquals(5, $model->getKey());
-    }
-
-    /**
-     * @return void
-     */
-    public function test_passed_if_model_is_saved()
-    {
-        $model = $this->getMockModelWithPdo();
-
-        $model->fill(array('name' => 'John', 'age' => 30));
-
-        $model->save();
-
-        $this->assertTrue($model->getAttribute('id') > 0);
-    }
-
-    /**
-     * @return void
-     */
-    public function test_passed_if_model_is_updated()
-    {
-        $model = $this->getMockModelWithPdo();
-
-        $model->fill(array('name' => 'John'));
-        $model->save();
-
-        $id = $model->getAttribute('id');
-
-        $model->fill(array('name' => 'Jane'));
-        $model->save();
-
-        $this->assertEquals($id, $model->getAttribute('id'));
-        $this->assertEquals('Jane', $model->getAttribute('name'));
-    }
-
-    /**
-     * @return void
-     */
-    public function test_passed_if_update_by_id_works()
-    {
-        $model = $this->getMockModelWithPdo();
-
-        $model->fill(array('name' => 'Old'));
-        $model->save();
-
-        $id = $model->getAttribute('id');
-
-        $updated = $model->update($id, array('name' => 'New'));
-
-        $this->assertEquals($id, $updated->getAttribute('id'));
-        $this->assertEquals('New', $updated->getAttribute('name'));
-    }
-
-    /**
-     * @return void
-     */
-    public function test_passed_if_model_is_deleted()
-    {
-        $model = $this->getMockModelWithPdo();
-
-        $model->fill(array('name' => 'John'));
-        $model->save();
-
-        $result = $model->delete();
-
-        $this->assertTrue($result);
-    }
-
-    /**
-     * @return void
-     */
-    public function test_passed_if_soft_delete_works()
-    {
-        $model = $this->getSoftDeleteModel();
-
-        $model->fill(array('name' => 'John'));
-        $model->save();
-
-        $model->delete();
-
-        $this->assertTrue($model->trashed());
-
-        $deleted = $model->getDeletedAtColumn();
-
-        $this->assertNotNull($model->getAttribute($deleted));
-    }
-
-    /**
-     * @return void
-     */
-    public function test_passed_if_restore_works()
-    {
-        $model = $this->getSoftDeleteModel();
-
-        $model->fill(array('name' => 'John'));
-        $model->save();
-
-        $model->delete();
-
-        $this->assertTrue($model->trashed());
-
-        $model->restore();
-
-        $this->assertFalse($model->trashed());
-    }
-
-    /**
-     * @return void
-     */
-    public function test_passed_if_force_delete_works()
-    {
-        $model = $this->getSoftDeleteModel();
-
-        $model->fill(array('name' => 'John'));
-        $model->save();
-
-        $result = $model->forceDelete();
-
-        $this->assertTrue($result);
-    }
-
-    /**
-     * @return void
-     */
-    public function test_passed_if_restore_no_soft_delete()
-    {
-        $model = $this->getMockModelWithPdo();
-
-        $this->assertFalse($model->restore());
-    }
-
-    /**
-     * @return void
-     */
-    public function test_passed_if_fill_respects_fillable()
-    {
-        $user = new User;
-
-        $user->setPdo($this->pdo);
-
-        $user->fill(array('name' => 'John', 'unknown' => 'secret'));
-
-        $this->assertEquals('John', $user->getAttribute('name'));
-
-        $this->assertNull($user->getAttribute('unknown'));
-    }
-
-    /**
-     * @return void
-     */
-    public function test_failed_if_fill_rejects_guarded()
-    {
-        $model = $this->getGuardedModel();
-
-        $model->fill(array('name' => 'John', 'password' => 'sec'));
-
-        $this->assertEquals('John', $model->getAttribute('name'));
-
-        $this->assertNull($model->getAttribute('password'));
-    }
-
-    /**
-     * @return void
-     */
-    public function test_passed_if_force_fill_bypasses()
-    {
-        $model = $this->getGuardedModel();
-
-        $model->forceFill(array('name' => 'John', 'password' => 'sec'));
-
-        $this->assertEquals('John', $model->getAttribute('name'));
-
-        $this->assertEquals('sec', $model->getAttribute('password'));
-    }
-
-    /**
-     * @return void
-     */
-    public function test_passed_if_timestamps_are_set()
-    {
-        $model = new class () extends Model
+        set_error_handler(function () use (&$triggered)
         {
-            protected $fillable = array('id', 'name', 'age');
-        };
+            $triggered = true;
+        });
 
-        $model->setTable('users');
+        /** @phpstan-ignore-next-line */
+        $model->delete();
 
-        $model->setPdo($this->pdo);
+        restore_error_handler();
 
-        $model->fill(array('name' => 'John'));
-        $model->save();
-
-        $this->assertNotNull($model->getAttribute('created_at'));
-        $this->assertNotNull($model->getAttribute('updated_at'));
+        $this->assertTrue($triggered);
     }
 
     /**
      * @return void
      */
-    public function test_passed_if_casts_integers()
+    public function test_passed_if_attribute_is_set()
     {
-        $user = new User;
+        $model = new User;
 
-        $user->setPdo($this->pdo);
+        $model->name = 'John';
 
-        $user->fill(array('name' => 'John', 'age' => '30'));
-        $user->save();
+        $this->assertTrue(isset($model->name));
 
-        $this->assertSame(30, $user->getAttribute('age'));
+        $this->assertFalse(isset($model->unknown));
     }
 
     /**
      * @return void
      */
-    public function test_passed_if_casts_booleans()
+    public function test_passed_if_count_uses_where_in()
     {
-        $user = new User;
+        $one = $this->createUser('User1');
+        $two = $this->createUser('User2');
 
-        $user->setPdo($this->pdo);
+        $ids = array($one->id, $two->id);
 
-        $user->fill(array('name' => 'John', 'active' => '1'));
-        $user->save();
+        $result = (new User)->whereIn('id', $ids)->count();
 
-        $this->assertSame(true, $user->getAttribute('active'));
+        $this->assertEquals(2, $result);
     }
 
     /**
      * @return void
      */
-    public function test_passed_if_accessor_is_called()
+    public function test_passed_if_delete_works()
     {
-        $user = new User;
+        $user = $this->createUser('ToDelete');
 
-        $user->setRawAttributes(array('name' => 'john'), true);
+        $user->delete();
 
-        $this->assertEquals('john', $user->getAttribute('name'));
+        $found = (new User)->find($user->id);
+
+        $this->assertNull($found);
     }
 
     /**
      * @return void
      */
-    public function test_failed_if_delete_on_nonexistent()
+    public function test_passed_if_filter_uses_default()
     {
-        $model = $this->getMockModelWithPdo();
+        $this->createUser('DefaultOp');
 
-        $this->assertNull($model->delete());
+        $found = (new User)->where('name', 'DefaultOp')->firstOrFail();
+
+        $this->assertEquals('DefaultOp', $found->name);
     }
 
     /**
      * @return void
      */
-    public function test_passed_if_query_returns_builder()
+    public function test_passed_if_filter_uses_greater()
     {
-        $model = $this->getMockModelWithPdo();
+        $this->createUser('GTTest');
 
-        $builder = $model->newQuery();
+        $found = (new User)->where('id', 0)->orWhere('id', '>', 0)->firstOrFail();
 
-        $this->assertInstanceOf('Rougin\Ezekiel\Active\Builder', $builder);
+        $this->assertEquals('GTTest', $found->name);
     }
 
     /**
      * @return void
      */
-    public function test_passed_if___get_uses_accessor()
+    public function test_passed_if_filter_uses_gte()
     {
-        $user = new User;
+        $user = $this->createUser('GTETest');
 
-        $user->setRawAttributes(array('name' => 'john'), true);
+        $found = (new User)->where('id', 0)->orWhere('id', '>=', $user->id)->firstOrFail();
 
-        $this->assertEquals('john', $user->getAttribute('name'));
+        $this->assertEquals('GTETest', $found->name);
     }
 
     /**
      * @return void
      */
-    public function test_passed_if___set_works()
+    public function test_passed_if_filter_uses_less()
     {
-        $user = new User;
+        $this->createUser('LTTest');
 
-        $user->setAttribute('name', 'Bob');
+        $found = (new User)->where('id', 0)->orWhere('id', '<', 99999)->firstOrFail();
 
-        $this->assertEquals('Bob', $user->getAttribute('name'));
+        $this->assertEquals('LTTest', $found->name);
     }
 
     /**
      * @return void
      */
-    public function test_passed_if_relation_lazy_loaded()
+    public function test_passed_if_filter_uses_like()
     {
-        $user = new User;
+        $this->createUser('LikeTest');
 
-        $user->setPdo($this->pdo);
+        $found = (new User)->where('name', '')->orWhere('name', 'LIKE', '%Like%')->firstOrFail();
 
-        $user->fill(array('name' => 'John'));
-        $user->save();
-
-        $posts = $user->getAttribute('posts');
-
-        $this->assertTrue(is_array($posts));
+        $this->assertEquals('LikeTest', $found->name);
     }
 
     /**
      * @return void
      */
-    public function test_passed_if_qualify_column()
+    public function test_passed_if_filter_uses_lte()
     {
-        $user = new User;
+        $user = $this->createUser('LTETest');
 
-        $expected = 'users.name';
+        $found = (new User)->where('id', 0)->orWhere('id', '<=', $user->id)->firstOrFail();
 
-        $this->assertEquals($expected, $user->qualifyColumn('name'));
+        $this->assertEquals('LTETest', $found->name);
     }
 
     /**
      * @return void
      */
-    public function test_passed_if_qualify_column_dotted()
+    public function test_passed_if_filter_uses_not_equal()
     {
-        $user = new User;
+        $this->createUser('ShouldMatch');
 
-        $this->assertEquals('a.b', $user->qualifyColumn('a.b'));
+        $found = (new User)->where('name', '')->orWhere('name', '!=', 'Other')->firstOrFail();
+
+        $this->assertEquals('ShouldMatch', $found->name);
+    }
+
+    /**
+     * @return void
+     */
+    public function test_passed_if_filter_uses_unknown_operator()
+    {
+        $this->createUser('Fallback');
+
+        $found = (new User)->where('name', '')->orWhere('name', 'UNKNOWN', 'Fallback')->firstOrFail();
+
+        $this->assertEquals('Fallback', $found->name);
+    }
+
+    /**
+     * @return void
+     */
+    public function test_passed_if_find_returns_model()
+    {
+        $user = $this->createUser('FindMe');
+
+        $found = (new User)->find($user->id);
+
+        $this->assertEquals('FindMe', $found->name);
+    }
+
+    /**
+     * @return void
+     */
+    public function test_passed_if_find_returns_null()
+    {
+        $found = (new User)->find(99999);
+
+        $this->assertNull($found);
+    }
+
+    /**
+     * @return void
+     */
+    public function test_passed_if_find_or_fail_works()
+    {
+        $user = $this->createUser('FindOrFail');
+
+        $found = (new User)->findOrFail($user->id);
+
+        $this->assertEquals('FindOrFail', $found->name);
+    }
+
+    /**
+     * @return void
+     */
+    public function test_passed_if_first_empty_set()
+    {
+        $this->doExpectException('UnexpectedValueException');
+
+        (new User)->firstOrFail();
+    }
+
+    /**
+     * @return void
+     */
+    public function test_passed_if_first_returns_model()
+    {
+        $this->createUser('FirstModel');
+
+        $found = (new User)->first();
+
+        $this->assertEquals('FirstModel', $found->name);
+    }
+
+    /**
+     * @return void
+     */
+    public function test_passed_if_first_returns_null()
+    {
+        $found = (new User)->where('name', 'None')->first();
+
+        $this->assertNull($found);
     }
 
     /**
@@ -397,190 +259,413 @@ class ModelTest extends Testcase
     /**
      * @return void
      */
+    public function test_passed_if_get_returns_models()
+    {
+        $this->createUser('GetTest');
+
+        $results = (new User)->get();
+
+        $this->assertCount(1, $results);
+
+        $this->assertInstanceOf('Rougin\Ezekiel\Active\Fixture\User', $results[0]);
+    }
+
+    /**
+     * @return void
+     */
     public function test_passed_if_joining_table_sorted()
     {
         $user = new User;
 
         $expected = 'tags_users';
 
-        $this->assertEquals($expected, $user->joiningTable('Rougin\Ezekiel\Active\Fixture\Tag'));
+        $actual = $user->joiningTable('Rougin\Ezekiel\Active\Fixture\Tag');
+
+        $this->assertEquals($expected, $actual);
     }
 
     /**
      * @return void
      */
-    public function test_passed_if_get_dirty_detects()
-    {
-        $model = $this->getMockModelWithPdo();
-
-        $model->fill(array('name' => 'Old'));
-        $model->save();
-
-        $model->fill(array('name' => 'New'));
-
-        $this->assertEquals('New', $model->getAttribute('name'));
-    }
-
-    /**
-     * @return void
-     */
-    public function test_passed_if_sync_original_works()
-    {
-        $model = $this->getMockModelWithPdo();
-
-        $model->fill(array('name' => 'John'));
-        $model->save();
-
-        $model->fill(array('name' => 'Jane'));
-
-        $this->assertEquals('Jane', $model->getAttribute('name'));
-
-        $model->save();
-
-        $this->assertEquals('Jane', $model->getAttribute('name'));
-    }
-
-    /**
-     * @return void
-     */
-    public function test_passed_if_set_raw_attributes()
-    {
-        $model = $this->getMockModelWithPdo();
-
-        $model->setRawAttributes(array('name' => 'Raw', 'age' => 25), true);
-
-        $this->assertEquals('Raw', $model->getAttribute('name'));
-        $this->assertEquals(25, $model->getAttribute('age'));
-    }
-
-    /**
-     * @return void
-     */
-    public function test_passed_if_connection_name_returned()
-    {
-        $model = $this->getMockModel();
-
-        $this->assertEquals('default', $model->getConnectionName());
-    }
-
-    /**
-     * @return void
-     */
-    public function test_passed_if_soft_delete_scopes_query()
-    {
-        $model = $this->getSoftDeleteModel();
-
-        $builder = $model->newQuery();
-
-        $this->assertInstanceOf('Rougin\Ezekiel\Active\Builder', $builder);
-    }
-
-    /**
-     * @return void
-     */
-    public function test_passed_if_get_incrementing()
-    {
-        $model = $this->getMockModel();
-
-        $this->assertTrue($model->getIncrementing());
-    }
-
-    /**
-     * @return void
-     */
-    public function test_passed_if_get_key_type()
-    {
-        $model = $this->getMockModel();
-
-        $this->assertEquals('int', $model->getKeyType());
-    }
-
-    /**
-     * @return void
-     */
-    public function test_passed_if_uses_timestamps()
-    {
-        $model = new User;
-
-        $this->assertTrue($model->usesTimestamps());
-    }
-
-    /**
-     * @return void
-     */
-    public function test_passed_if_get_created_at_column()
-    {
-        $model = $this->getMockModel();
-
-        $this->assertEquals('created_at', $model->getCreatedAtColumn());
-    }
-
-    /**
-     * @return void
-     */
-    public function test_passed_if_get_updated_at_column()
-    {
-        $model = $this->getMockModel();
-
-        $this->assertEquals('updated_at', $model->getUpdatedAtColumn());
-    }
-
-    /**
-     * @return void
-     */
-    public function test_passed_if_get_deleted_at_column()
-    {
-        $model = $this->getMockModel();
-
-        $this->assertEquals('deleted_at', $model->getDeletedAtColumn());
-    }
-
-    /**
-     * @return void
-     */
-    public function test_passed_if_get_qualified_key_name()
+    public function test_passed_if_key_is_returned()
     {
         $user = new User;
 
-        $this->assertEquals('users.id', $user->getQualifiedKeyName());
+        $this->assertEquals('id', $user->getKey());
     }
 
     /**
      * @return void
      */
-    public function test_passed_if_is_fillable()
+    public function test_passed_if_key_name_is_returned()
     {
-        $model = $this->getGuardedModel();
+        $user = new User;
 
-        $this->assertTrue($model->isFillable('name'));
-        $this->assertFalse($model->isFillable('password'));
+        $this->assertEquals('id', $user->getKeyName());
     }
 
     /**
      * @return void
      */
-    public function test_passed_if_get_pdo()
+    public function test_passed_if_limit_uses_offset()
     {
-        $model = $this->getMockModelWithPdo();
+        $this->createUser('First');
+        $this->createUser('Second');
 
-        $this->assertSame($this->pdo, $model->getPdo());
+        $results = (new User)->limit(1)->offset(1)->get();
+
+        $this->assertCount(1, $results);
+        $this->assertEquals('Second', $results[0]->name);
     }
 
     /**
-     * @param array<string, mixed> $attributes
+     * @return void
+     */
+    public function test_passed_if_model_is_saved()
+    {
+        $model = new User;
+
+        $model->name = 'John';
+
+        $model->save();
+
+        $this->assertTrue($model->id > 0);
+    }
+
+    /**
+     * @return void
+     */
+    public function test_passed_if_model_is_updated()
+    {
+        $model = new User;
+
+        $model->name = 'Old';
+
+        $model->save();
+
+        $id = $model->id;
+
+        $model->name = 'New';
+
+        $model->save();
+
+        $this->assertEquals($id, $model->id);
+
+        $this->assertEquals('New', $model->name);
+    }
+
+    /**
+     * @return void
+     */
+    public function test_passed_if_pdo_default_fallback()
+    {
+        $model = new User;
+
+        $pdo = $model->getPdo();
+
+        $this->assertInstanceOf('PDO', $pdo);
+    }
+
+    /**
+     * @return void
+     */
+    public function test_passed_if_property_routes_to_method()
+    {
+        $model = new User;
+
+        /** @phpstan-ignore-next-line */
+        $actual = $model->exists;
+
+        $this->assertFalse($actual);
+    }
+
+    /**
+     * @return void
+     */
+    public function test_passed_if_save_creates_record()
+    {
+        $model = new User;
+
+        $model->name = 'Direct Save';
+
+        $model->save();
+
+        $this->assertTrue($model->exists);
+
+        $found = (new User)->findOrFail($model->id);
+
+        $this->assertEquals('Direct Save', $found->name);
+    }
+
+    /**
+     * @return void
+     */
+    public function test_passed_if_table_is_derived()
+    {
+        $user = new User;
+
+        $this->assertEquals('users', $user->getTable());
+    }
+
+    /**
+     * @return void
+     */
+    public function test_passed_if_timestamps_are_set()
+    {
+        $model = new User;
+
+        $model->name = 'Timestamped';
+
+        $model->save();
+
+        $this->assertNotNull($model->created_at);
+
+        $this->assertNotNull($model->updated_at);
+    }
+
+    /**
+     * @return void
+     */
+    public function test_passed_if_all_returns_models()
+    {
+        $this->createUser('AllTest');
+
+        $results = (new User)->all();
+
+        $this->assertCount(1, $results);
+
+        $this->assertInstanceOf('Rougin\Ezekiel\Active\Fixture\User', $results[0]);
+    }
+
+    /**
+     * @return void
+     */
+    public function test_passed_if_cast_boolean()
+    {
+        $user = new User;
+
+        $user->active = '1';
+
+        $this->assertSame(true, $user->active);
+    }
+
+    /**
+     * @return void
+     */
+    public function test_passed_if_cast_float()
+    {
+        $model = $this->createFloatUser();
+
+        $model->id = 1;
+
+        $model->score = '95.5';
+
+        $this->assertSame(95.5, $model->score);
+    }
+
+    /**
+     * @return void
+     */
+    public function test_passed_if_cast_string()
+    {
+        $model = $this->createStringUser();
+
+        $model->id = 1;
+
+        $model->notes = 123;
+
+        $this->assertSame('123', $model->notes);
+    }
+
+    /**
+     * @return void
+     */
+    public function test_passed_if_get_accessor_called()
+    {
+        $user = new User;
+
+        $user->name = 'john';
+
+        $this->assertEquals('john', $user->name);
+    }
+
+    /**
+     * @return void
+     */
+    public function test_passed_if_get_table_fallback()
+    {
+        $user = new User;
+
+        $this->assertEquals('users', $user->getTable());
+    }
+
+    /**
+     * @return void
+     */
+    public function test_passed_if_to_array_works()
+    {
+        $user = $this->createUser('ArrayTest');
+
+        $data = $user->toArray();
+
+        $this->assertEquals('ArrayTest', $data['name']);
+    }
+
+    /**
+     * @return void
+     */
+    public function test_passed_if_update_works()
+    {
+        $user = $this->createUser('UpdOld');
+
+        $user->update(array('name' => 'UpdNew'));
+
+        $this->assertEquals('UpdNew', $user->name);
+    }
+
+    /**
+     * @return void
+     */
+    public function test_passed_if_has_one_factory()
+    {
+        $user = $this->createUser('John');
+
+        $relation = $user->profile();
+
+        $this->assertInstanceOf('Rougin\Ezekiel\Active\Relations\HasOne', $relation);
+    }
+
+    /**
+     * @return void
+     */
+    public function test_passed_if_soft_delete_builder()
+    {
+        $model = new class () extends Model
+        {
+            protected $softDeletes = true;
+        };
+
+        $model->limit(0);
+
+        $this->assertInstanceOf('Rougin\Ezekiel\Active\Model', $model);
+    }
+
+    /**
+     * @return void
+     */
+    public function test_passed_if_model_soft_delete()
+    {
+        $model = new class () extends Model
+        {
+            protected $softDeletes = true;
+
+            protected $fillable = array('id', 'name');
+
+            protected $table = 'users';
+        };
+
+        $model->name = 'SoftDel';
+
+        $model->save();
+
+        $model->delete();
+
+        /** @var \PDOStatement $stmt */
+        $stmt = $this->pdo->query('SELECT deleted_at FROM users WHERE id = ' . $model->id);
+
+        $row = $stmt->fetch(\PDO::FETCH_ASSOC);
+
+        $this->assertNotNull($row['deleted_at']);
+    }
+
+    /**
+     * @return void
+     */
+    public function test_passed_if_count_uses_scalar_bind()
+    {
+        $this->createUser('ScalarCount');
+
+        $count = (new User)->where('name', 'ScalarCount')->count();
+
+        $this->assertEquals(1, $count);
+    }
+
+    /**
+     * @return void
+     */
+    public function test_passed_if_cast_null_type()
+    {
+        $model = new class () extends Model
+        {
+            protected $casts = array();
+        };
+
+        $model->id = 1;
+
+        $model->name = 'Test';
+
+        $this->assertEquals('Test', $model->name);
+    }
+
+    /**
+     * @return void
+     */
+    public function test_passed_if_cast_unknown_type()
+    {
+        $model = new class () extends Model
+        {
+            protected $casts = array('meta' => 'json');
+        };
+
+        $model->id = 1;
+
+        $model->meta = '{"key":"val"}';
+
+        $this->assertEquals('{"key":"val"}', $model->meta);
+    }
+
+    /**
+     * @return void
+     */
+    public function test_passed_if_cast_returns_null_for_null()
+    {
+        $model = new class () extends Model
+        {
+            protected $casts = array('score' => 'float');
+        };
+
+        $model->id = 1;
+
+        $model->score = null;
+
+        $this->assertNull($model->score);
+    }
+
+    /**
+     * @return void
+     */
+    public function test_passed_if_get_table_explicit()
+    {
+        $model = new class () extends Model
+        {
+            protected $table = 'custom_table';
+        };
+
+        $this->assertEquals('custom_table', $model->getTable());
+    }
+
+    /**
+     * @param string $name
      *
-     * @return \Rougin\Ezekiel\Active\Model
+     * @return \Rougin\Ezekiel\Active\Fixture\User
      */
-    protected function getMockModel(array $attributes = array())
+    protected function createUser($name)
     {
-        $model = new class ($attributes) extends Model
-        {
-            protected $timestamps = false;
+        $model = new User;
 
-            protected $fillable = array('id', 'name', 'age');
-        };
+        $model->name = $name;
 
-        $model->setTable('users');
+        $model->save();
 
         return $model;
     }
@@ -588,18 +673,14 @@ class ModelTest extends Testcase
     /**
      * @return \Rougin\Ezekiel\Active\Model
      */
-    protected function getMockModelWithPdo()
+    protected function createFloatUser()
     {
         $model = new class () extends Model
         {
-            protected $timestamps = false;
+            protected $casts = array('score' => 'float');
 
-            protected $fillable = array('id', 'name', 'age');
+            protected $fillable = array('id', 'score');
         };
-
-        $model->setTable('users');
-
-        $model->setPdo($this->pdo);
 
         return $model;
     }
@@ -607,41 +688,14 @@ class ModelTest extends Testcase
     /**
      * @return \Rougin\Ezekiel\Active\Model
      */
-    protected function getSoftDeleteModel()
+    protected function createStringUser()
     {
         $model = new class () extends Model
         {
-            protected $softDelete = true;
+            protected $casts = array('notes' => 'string');
 
-            protected $timestamps = false;
-
-            protected $fillable = array('id', 'name', 'deleted_at', 'created_at', 'updated_at');
+            protected $fillable = array('id', 'notes');
         };
-
-        $model->setTable('users');
-
-        $model->setPdo($this->pdo);
-
-        return $model;
-    }
-
-    /**
-     * @return \Rougin\Ezekiel\Active\Model
-     */
-    protected function getGuardedModel()
-    {
-        $model = new class () extends Model
-        {
-            protected $timestamps = false;
-
-            protected $fillable = array('name');
-
-            protected $guarded = array('password');
-        };
-
-        $model->setTable('users');
-
-        $model->setPdo($this->pdo);
 
         return $model;
     }
@@ -658,6 +712,14 @@ class ModelTest extends Testcase
         $pdo->exec('CREATE TABLE users (id INTEGER PRIMARY KEY AUTOINCREMENT, name TEXT, age INTEGER, active TEXT, created_at TEXT, updated_at TEXT, deleted_at TEXT)');
 
         $pdo->exec('CREATE TABLE posts (id INTEGER PRIMARY KEY AUTOINCREMENT, user_id INTEGER, title TEXT, created_at TEXT, updated_at TEXT)');
+
+        $pdo->exec('CREATE TABLE tags (id INTEGER PRIMARY KEY AUTOINCREMENT, name TEXT, created_at TEXT, updated_at TEXT)');
+
+        $pdo->exec('CREATE TABLE post_tag (post_id INTEGER, tag_id INTEGER, extra TEXT, created_at TEXT, updated_at TEXT)');
+
+        $pdo->exec('CREATE TABLE profiles (id INTEGER PRIMARY KEY AUTOINCREMENT, user_id INTEGER, bio TEXT, created_at TEXT, updated_at TEXT)');
+
+        Model::setPdo('default', $pdo);
 
         $this->pdo = $pdo;
     }

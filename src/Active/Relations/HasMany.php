@@ -2,6 +2,8 @@
 
 namespace Rougin\Ezekiel\Active\Relations;
 
+use Rougin\Ezekiel\Active\Depot;
+use Rougin\Ezekiel\Active\Manager;
 use Rougin\Ezekiel\Active\Model;
 
 /**
@@ -9,8 +11,13 @@ use Rougin\Ezekiel\Active\Model;
  *
  * @author Rougin Gutib <rougingutib@gmail.com>
  */
-class HasMany extends Relation
+class HasMany
 {
+    /**
+     * @var \Rougin\Ezekiel\Active\Depot
+     */
+    protected $depot;
+
     /**
      * @var string
      */
@@ -22,6 +29,21 @@ class HasMany extends Relation
     protected $localKey;
 
     /**
+     * @var \Rougin\Ezekiel\Active\Model
+     */
+    protected $parent;
+
+    /**
+     * @var string
+     */
+    protected $related;
+
+    /**
+     * @var \Rougin\Ezekiel\Active\Model[]
+     */
+    protected $results = array();
+
+    /**
      * @param \Rougin\Ezekiel\Active\Model $parent
      * @param string                       $related
      * @param string|null                  $foreignKey
@@ -29,36 +51,17 @@ class HasMany extends Relation
      */
     public function __construct(Model $parent, $related, $foreignKey = null, $localKey = null)
     {
-        parent::__construct($parent, $related);
-
         $this->foreignKey = $foreignKey ?: $parent->getForeignKey();
 
         $this->localKey = $localKey ?: $parent->getKeyName();
-    }
 
-    /**
-     * @param \Rougin\Ezekiel\Active\Model[] $models
-     *
-     * @return void
-     */
-    public function addEagers(array $models)
-    {
-        $keys = array();
+        $this->parent = $parent;
 
-        foreach ($models as $model)
-        {
-            $key = $model->getAttribute($this->localKey);
+        $this->related = $related;
 
-            if ($key !== null)
-            {
-                $keys[] = $key;
-            }
-        }
+        $name = $parent->getConnectionName();
 
-        if (! empty($keys))
-        {
-            $this->query->whereIn($this->foreignKey, $keys);
-        }
+        $this->depot = new Depot(new Manager, $name);
     }
 
     /**
@@ -66,54 +69,18 @@ class HasMany extends Relation
      */
     public function getResults()
     {
-        if ($this->results === null)
+        $value = $this->parent->{$this->localKey};
+
+        if ($value === null)
         {
-            $this->results = $this->query
-                ->where($this->foreignKey, '=', $this->parent->getAttribute($this->localKey))
-                ->get();
+            return array();
         }
 
-        /** @var \Rougin\Ezekiel\Active\Model[] */
-        return $this->results;
-    }
+        $related = $this->related;
 
-    /**
-     * @param \Rougin\Ezekiel\Active\Model[] $models
-     * @param mixed                          $results
-     * @param string                         $relation
-     *
-     * @return void
-     */
-    public function match(array $models, $results, $relation)
-    {
-        $dictionary = array();
+        /** @var \Rougin\Ezekiel\Active\Model */
+        $model = new $related;
 
-        /** @var \Rougin\Ezekiel\Active\Model[] $resultList */
-        $resultList = is_array($results) ? $results : array();
-
-        foreach ($resultList as $result)
-        {
-            $key = $result->getAttribute($this->foreignKey);
-
-            /** @var array<int|string, \Rougin\Ezekiel\Active\Model[]> $dictionary */
-
-            if (! isset($dictionary[$key]))
-            {
-                $dictionary[$key] = array();
-            }
-
-            $dictionary[$key][] = $result;
-        }
-
-        foreach ($models as $model)
-        {
-            $key = $model->getAttribute($this->localKey);
-
-            /** @var array<int|string, \Rougin\Ezekiel\Active\Model[]> $dictionary */
-
-            $value = isset($dictionary[$key]) ? $dictionary[$key] : array();
-
-            $model->setRelation($relation, $value);
-        }
+        return $model->where($this->foreignKey, $value)->get();
     }
 }

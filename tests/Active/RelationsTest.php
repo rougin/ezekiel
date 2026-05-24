@@ -3,11 +3,9 @@
 namespace Rougin\Ezekiel\Active;
 
 use Rougin\Ezekiel\Active\Fixture\Post;
+use Rougin\Ezekiel\Active\Fixture\Profile;
 use Rougin\Ezekiel\Active\Fixture\Tag;
 use Rougin\Ezekiel\Active\Fixture\User;
-use Rougin\Ezekiel\Active\Relations\BelongsToMany;
-use Rougin\Ezekiel\Active\Relations\HasMany;
-use Rougin\Ezekiel\Active\Relations\HasOne;
 use Rougin\Ezekiel\Testcase;
 
 /**
@@ -25,113 +23,17 @@ class RelationsTest extends Testcase
     /**
      * @return void
      */
-    public function test_passed_if_has_many_returns_models()
-    {
-        $user = $this->createUser('John');
-
-        $this->createPost($user->getKey(), 'Post 1');
-
-        $this->createPost($user->getKey(), 'Post 2');
-
-        $posts = $user->getAttribute('posts');
-
-        $this->assertTrue(is_array($posts));
-
-        $this->assertCount(2, $posts);
-    }
-
-    /**
-     * @return void
-     */
-    public function test_passed_if_has_many_returns_empty()
-    {
-        $user = $this->createUser('John');
-
-        $posts = $user->getAttribute('posts');
-
-        $this->assertTrue(is_array($posts));
-
-        $this->assertCount(0, $posts);
-    }
-
-    /**
-     * @return void
-     */
-    public function test_passed_if_has_one_returns_model()
-    {
-        $user = $this->createUser('John');
-
-        $user->setPdo($this->pdo);
-
-        $postClass = 'Rougin\Ezekiel\Active\Fixture\Post';
-
-        $relation = new HasOne($user, $postClass);
-
-        $this->assertInstanceOf('Rougin\Ezekiel\Active\Relations\HasOne', $relation);
-
-        $this->assertInstanceOf('Rougin\Ezekiel\Active\Fixture\User', $relation->getParent());
-
-        $this->assertEquals('Rougin\Ezekiel\Active\Fixture\Post', $relation->getRelatedClass());
-
-        $this->assertInstanceOf('Rougin\Ezekiel\Active\Builder', $relation->getQuery());
-    }
-
-    /**
-     * @return void
-     */
-    public function test_passed_if_belongs_to_works()
-    {
-        $user = $this->createUser('John');
-
-        $post = $this->createPost($user->getKey(), 'Article');
-
-        $p = $post->getAttribute('user');
-
-        $this->assertInstanceOf('Rougin\Ezekiel\Active\Fixture\User', $p);
-
-        $this->assertEquals($user->getKey(), $p->getKey());
-    }
-
-    /**
-     * @return void
-     */
-    public function test_passed_if_belongs_to_null()
-    {
-        $user = $this->createUser('John');
-
-        $post = $this->createPost(999, 'No Parent');
-
-        $p = $post->getAttribute('user');
-
-        $this->assertNull($p);
-    }
-
-    /**
-     * @return void
-     */
-    public function test_passed_if_belongs_to_many()
-    {
-        $tag = $this->createTag('Tech');
-
-        $tags = $tag->getAttribute('posts');
-
-        $this->assertTrue(is_array($tags));
-    }
-
-    /**
-     * @return void
-     */
     public function test_passed_if_attach_pivot_works()
     {
         $user = $this->createUser('John');
 
         $tag = $this->createTag('PHP');
 
-        $post = $this->createPost($user->getKey(), 'Article');
+        $post = $this->createPost($user->id, 'Article');
 
-        $relation = $this->createPostTagRelation($post);
+        $relation = $post->tags();
 
-        $relation->attach($tag->getKey(), array('extra' => 'bonus'));
+        $relation->attach($tag->id, array('extra' => 'bonus'));
 
         /** @var \PDOStatement $stmt */
         $stmt = $this->pdo->query('SELECT COUNT(*) FROM post_tag');
@@ -144,55 +46,123 @@ class RelationsTest extends Testcase
     /**
      * @return void
      */
-    public function test_passed_if_detach_pivot_works()
+    public function test_passed_if_belongs_to_null()
     {
-        $user = $this->createUser('John');
+        $this->createUser('John');
 
-        $tag = $this->createTag('PHP');
+        $post = new Post;
 
-        $post = $this->createPost($user->getKey(), 'Article');
+        $post->user_id = 999;
 
-        $relation = $this->createPostTagRelation($post);
+        $post->title = 'No Parent';
 
-        $relation->attach($tag->getKey());
+        $found = $post->user;
 
-        $relation->detach($tag->getKey());
-
-        /** @var \PDOStatement $stmt */
-        $stmt = $this->pdo->query('SELECT COUNT(*) FROM post_tag');
-
-        $count = (int) $stmt->fetchColumn();
-
-        $this->assertEquals(0, $count);
+        $this->assertNull($found);
     }
 
     /**
      * @return void
      */
-    public function test_passed_if_detach_all_works()
+    public function test_passed_if_belongs_to_works()
     {
         $user = $this->createUser('John');
 
-        $tag1 = $this->createTag('A');
+        $post = $this->createPost($user->id, 'Article');
 
-        $tag2 = $this->createTag('B');
+        $found = $post->user;
 
-        $post = $this->createPost($user->getKey(), 'Article');
+        $this->assertInstanceOf('Rougin\Ezekiel\Active\Fixture\User', $found);
 
-        $relation = $this->createPostTagRelation($post);
+        $this->assertEquals($user->id, $found->id);
+    }
 
-        $relation->attach($tag1->getKey());
+    /**
+     * @return void
+     */
+    public function test_passed_if_belongs_to_many()
+    {
+        $user = $this->createUser('John');
 
-        $relation->attach($tag2->getKey());
+        $tag = $this->createTag('Tech');
 
-        $relation->detach();
+        $post = $this->createPost($user->id, 'Post');
 
-        /** @var \PDOStatement $stmt */
-        $stmt = $this->pdo->query('SELECT COUNT(*) FROM post_tag');
+        $post->tags()->attach($tag->id);
 
-        $count = (int) $stmt->fetchColumn();
+        $tags = $post->tags;
 
-        $this->assertEquals(0, $count);
+        $this->assertTrue(is_array($tags));
+    }
+
+    /**
+     * @return void
+     */
+    public function test_passed_if_eager_loads_relation()
+    {
+        $user = $this->createUser('Eager');
+
+        $this->createPost($user->id, 'Post 1');
+
+        $this->createPost($user->id, 'Post 2');
+
+        $found = (new User)->with('posts')->findOrFail($user->id);
+
+        $this->assertEquals('Eager', $found->name);
+
+        $this->assertCount(2, $found->posts);
+    }
+
+    /**
+     * @return void
+     */
+    public function test_passed_if_get_all_is_cached()
+    {
+        $user = $this->createUser('Cache');
+
+        $post = $this->createPost($user->id, 'Cached');
+
+        $tag = $this->createTag('Cache');
+
+        $post->tags()->attach($tag->id);
+
+        $first = $post->tags;
+
+        $second = $post->tags;
+
+        $this->assertSame($first, $second);
+    }
+
+    /**
+     * @return void
+     */
+    public function test_passed_if_has_many_returns_empty()
+    {
+        $user = $this->createUser('John');
+
+        $posts = $user->posts;
+
+        $this->assertTrue(is_array($posts));
+
+        $this->assertCount(0, $posts);
+    }
+
+    /**
+     * @return void
+     */
+    public function test_passed_if_has_many_returns_models()
+    {
+        $user = $this->createUser('John');
+
+        $this->createPost($user->id, 'Post 1');
+
+        $this->createPost($user->id, 'Post 2');
+
+        $posts = $user->posts;
+
+        $this->assertTrue(is_array($posts));
+
+        $this->assertCount(2, $posts);
     }
 
     /**
@@ -204,13 +174,11 @@ class RelationsTest extends Testcase
 
         $tag = $this->createTag('Laravel');
 
-        $post = $this->createPost($user->getKey(), 'Art');
+        $post = $this->createPost($user->id, 'Art');
 
-        $relation = $this->createPostTagRelation($post);
+        $post->tags()->attach($tag->id, array('extra' => 'framework'));
 
-        $relation->attach($tag->getKey(), array('extra' => 'framework'));
-
-        $tags = $post->getAttribute('tags');
+        $tags = $post->tags;
 
         $this->assertTrue(is_array($tags));
 
@@ -220,33 +188,7 @@ class RelationsTest extends Testcase
 
         $this->assertInstanceOf('Rougin\Ezekiel\Active\Fixture\Tag', $first);
 
-        $this->assertEquals($tag->getKey(), $first->getKey());
-    }
-
-    /**
-     * @return void
-     */
-    public function test_passed_if_pivot_foreign_key()
-    {
-        $user = $this->createUser('John');
-
-        $tag = $this->createTag('PHP');
-
-        $post = $this->createPost($user->getKey(), 'Article');
-
-        $relation = $this->createPostTagRelation($post);
-
-        $relation->attach($tag->getKey());
-
-        $results = $relation->getResults();
-
-        $this->assertNotEmpty($results);
-
-        $first = $results[0];
-
-        $this->assertInstanceOf('Rougin\Ezekiel\Active\Fixture\Tag', $first);
-
-        $this->assertEquals($tag->getKey(), $first->getKey());
+        $this->assertEquals($tag->id, $first->id);
     }
 
     /**
@@ -254,11 +196,9 @@ class RelationsTest extends Testcase
      */
     public function test_passed_if_with_pivot_includes()
     {
-        $user = $this->createUser('John');
+        $post = new Post;
 
-        $relation = $this->createPostTagRelation($user);
-
-        $relation->withPivot('extra');
+        $relation = $post->tags()->withPivot('extra');
 
         $this->assertInstanceOf('Rougin\Ezekiel\Active\Relations\BelongsToMany', $relation);
     }
@@ -268,174 +208,11 @@ class RelationsTest extends Testcase
      */
     public function test_passed_if_with_timestamps_works()
     {
-        $user = $this->createUser('John');
+        $post = new Post;
 
-        $relation = $this->createPostTagRelation($user);
-
-        $relation->withTimestamps();
+        $relation = $post->tags()->withTimestamps();
 
         $this->assertInstanceOf('Rougin\Ezekiel\Active\Relations\BelongsToMany', $relation);
-    }
-
-    /**
-     * @return void
-     */
-    public function test_passed_if_match_assigns_relations()
-    {
-        $user1 = $this->createUser('User1');
-
-        $user2 = $this->createUser('User2');
-
-        $p1 = $this->createPost($user1->getKey(), 'P1');
-
-        $p2 = $this->createPost($user1->getKey(), 'P2');
-
-        $p3 = $this->createPost($user2->getKey(), 'P3');
-
-        $models = array($user1, $user2);
-
-        $results = array($p1, $p2, $p3);
-
-        $relation = $this->createHasManyRelation($user1);
-
-        $relation->match($models, $results, 'posts');
-
-        $u1posts = $user1->getAttribute('posts');
-
-        $u2posts = $user2->getAttribute('posts');
-
-        $this->assertTrue(is_array($u1posts));
-
-        $this->assertTrue(is_array($u2posts));
-
-        $this->assertCount(2, $u1posts);
-
-        $this->assertCount(1, $u2posts);
-    }
-
-    /**
-     * @return void
-     */
-    public function test_passed_if_init_relation_clears()
-    {
-        $user = $this->createUser('John');
-
-        $relation = $this->createHasManyRelation($user);
-
-        $models = $relation->newRelations(array($user), 'posts');
-
-        $result = $models[0]->getAttribute('posts');
-
-        $this->assertTrue(is_array($result));
-
-        $this->assertCount(0, $result);
-    }
-
-    /**
-     * @return void
-     */
-    public function test_passed_if_get_parent_works()
-    {
-        $user = $this->createUser('John');
-
-        $relation = $this->createHasManyRelation($user);
-
-        $this->assertSame($user, $relation->getParent());
-    }
-
-    /**
-     * @return void
-     */
-    public function test_passed_if_get_related_works()
-    {
-        $user = $this->createUser('John');
-
-        $relation = $this->createHasManyRelation($user);
-
-        $related = $relation->getRelated();
-
-        $this->assertInstanceOf('Rougin\Ezekiel\Active\Fixture\Post', $related);
-    }
-
-    /**
-     * @return void
-     */
-    public function test_passed_if_get_related_class()
-    {
-        $user = $this->createUser('John');
-
-        $relation = $this->createHasManyRelation($user);
-
-        $this->assertEquals('Rougin\Ezekiel\Active\Fixture\Post', $relation->getRelatedClass());
-    }
-
-    /**
-     * @return void
-     */
-    public function test_passed_if_get_query_returns_builder()
-    {
-        $user = $this->createUser('John');
-
-        $relation = $this->createHasManyRelation($user);
-
-        $this->assertInstanceOf('Rougin\Ezekiel\Active\Builder', $relation->getQuery());
-    }
-
-    /**
-     * @return void
-     */
-    public function test_passed_if_add_eager_constraints()
-    {
-        $user = $this->createUser('John');
-
-        $relation = $this->createHasManyRelation($user);
-
-        $relation->addEagers(array($user));
-
-        $this->assertInstanceOf('Rougin\Ezekiel\Active\Relations\HasMany', $relation);
-    }
-
-    /**
-     * @return \Rougin\Ezekiel\Active\Relations\BelongsToMany
-     */
-    protected function createPostTagRelation(Model $post)
-    {
-        return new BelongsToMany(
-            $post,
-            Tag::class,
-            'post_tag',
-            'post_id',
-            'tag_id',
-            'id',
-            'id'
-        );
-    }
-
-    /**
-     * @param \Rougin\Ezekiel\Active\Model $parent
-     *
-     * @return \Rougin\Ezekiel\Active\Relations\HasMany
-     */
-    protected function createHasManyRelation(Model $parent)
-    {
-        return new HasMany($parent, 'Rougin\Ezekiel\Active\Fixture\Post', 'user_id', 'id');
-    }
-
-    /**
-     * @param string $name
-     *
-     * @return \Rougin\Ezekiel\Active\Fixture\User
-     */
-    protected function createUser($name)
-    {
-        $user = new User;
-
-        $user->setPdo($this->pdo);
-
-        $user->fill(array('name' => $name));
-        $user->save();
-
-        return $user;
     }
 
     /**
@@ -448,9 +225,10 @@ class RelationsTest extends Testcase
     {
         $post = new Post;
 
-        $post->setPdo($this->pdo);
+        $post->user_id = $userId;
 
-        $post->fill(array('user_id' => $userId, 'title' => $title));
+        $post->title = $title;
+
         $post->save();
 
         return $post;
@@ -465,12 +243,233 @@ class RelationsTest extends Testcase
     {
         $tag = new Tag;
 
-        $tag->setPdo($this->pdo);
+        $tag->name = $name;
 
-        $tag->fill(array('name' => $name));
         $tag->save();
 
         return $tag;
+    }
+
+    /**
+     * @param string $name
+     *
+     * @return \Rougin\Ezekiel\Active\Fixture\User
+     */
+    protected function createUser($name)
+    {
+        $user = new User;
+
+        $user->name = $name;
+
+        $user->save();
+
+        return $user;
+    }
+
+    /**
+     * @return void
+     */
+    public function test_passed_if_belongs_to_many_attach_timestamps()
+    {
+        $user = $this->createUser('John');
+        $tag = $this->createTag('TS');
+        $post = $this->createPost($user->id, 'TS Post');
+
+        $relation = $post->tags()->withTimestamps();
+
+        $relation->attach($tag->id);
+
+        /** @var \PDOStatement $stmt */
+        $stmt = $this->pdo->query('SELECT COUNT(*) FROM post_tag WHERE created_at IS NOT NULL');
+
+        $count = (int) $stmt->fetchColumn();
+
+        $this->assertEquals(1, $count);
+    }
+
+    /**
+     * @return void
+     */
+    public function test_passed_if_belongs_to_many_empty()
+    {
+        $user = $this->createUser('EmptyBM');
+
+        $this->assertInstanceOf('Rougin\Ezekiel\Active\Relations\BelongsToMany', $user->tags());
+    }
+
+    /**
+     * @return void
+     */
+    public function test_passed_if_belongs_to_many_no_pivot_filter()
+    {
+        $user = $this->createUser('John');
+        $tag = $this->createTag('NoFilter');
+        $post = $this->createPost($user->id, 'NF Post');
+
+        $post->tags()->attach($tag->id);
+
+        $tags = $post->tags;
+
+        $this->assertCount(1, $tags);
+
+        $this->assertNotNull($tags[0]->pivot);
+    }
+
+    /**
+     * @return void
+     */
+    public function test_passed_if_belongs_to_many_zero_rows()
+    {
+        $user = $this->createUser('Zero');
+
+        $results = $user->tags();
+
+        $results->getAll();
+
+        $this->assertInstanceOf('Rougin\Ezekiel\Active\Relations\BelongsToMany', $results);
+    }
+
+    /**
+     * @return void
+     */
+    public function test_passed_if_belongs_to_many_cached()
+    {
+        $user = $this->createUser('CacheBM');
+
+        $results = $user->tags();
+
+        $first = $results->getAll();
+
+        $second = $results->getAll();
+
+        $this->assertSame($first, $second);
+    }
+
+    /**
+     * @return void
+     */
+    public function test_passed_if_belongs_to_many_default_pivot()
+    {
+        $user = $this->createUser('John');
+
+        $tag = $this->createTag('DefaultPivot');
+
+        $this->pdo->exec("INSERT INTO post_tag (post_id, tag_id) VALUES ($user->id, $tag->id)");
+
+        $results = $user->tags();
+
+        $models = $results->getAll();
+
+        $this->assertCount(1, $models);
+
+        $this->assertNotNull($models[0]->pivot);
+    }
+
+    /**
+     * @return void
+     */
+    public function test_passed_if_belongs_to_null_foreign()
+    {
+        $post = new Post;
+
+        $result = $post->user();
+
+        $this->assertInstanceOf('Rougin\Ezekiel\Active\Relations\BelongsTo', $result);
+    }
+
+    /**
+     * @return void
+     */
+    public function test_passed_if_belongs_to_null_value()
+    {
+        $post = new Post;
+
+        $user = $post->user;
+
+        $this->assertNull($user);
+    }
+
+    /**
+     * @return void
+     */
+    public function test_passed_if_has_many_null_local()
+    {
+        $user = new User;
+
+        $posts = $user->posts;
+
+        $this->assertCount(0, $posts);
+    }
+
+    /**
+     * @return void
+     */
+    public function test_passed_if_has_one_returns_model()
+    {
+        $user = $this->createUser('HasOne');
+
+        $this->createProfile($user->id, 'My bio');
+
+        $profile = $user->profile;
+
+        $this->assertInstanceOf('Rougin\Ezekiel\Active\Fixture\Profile', $profile);
+
+        $this->assertEquals('My bio', $profile->bio);
+    }
+
+    /**
+     * @return void
+     */
+    public function test_passed_if_has_one_returns_null()
+    {
+        $user = new User;
+
+        $profile = $user->profile;
+
+        $this->assertNull($profile);
+    }
+
+    /**
+     * @return void
+     */
+    public function test_passed_if_builder_soft_deletes_filter()
+    {
+        $pdo = new \PDO('sqlite::memory:');
+
+        Manager::set('test_soft', $pdo);
+
+        $dialect = \Rougin\Ezekiel\Dialect::fromPdo($pdo);
+
+        $builder = new \Rougin\Ezekiel\Active\Builder($dialect, 'test_table');
+
+        $builder->useSoftDeletes(true);
+
+        $builder->where('name', 'Test');
+
+        $query = $builder->toQuery();
+
+        $sql = $query->toSql();
+
+        $this->assertStringContainsString('deleted_at', $sql);
+    }
+
+    /**
+     * @param mixed  $userId
+     * @param string $bio
+     *
+     * @return \Rougin\Ezekiel\Active\Fixture\Profile
+     */
+    protected function createProfile($userId, $bio)
+    {
+        $profile = new Profile;
+
+        $profile->user_id = $userId;
+
+        $profile->bio = $bio;
+
+        $profile->save();
+
+        return $profile;
     }
 
     /**
@@ -482,13 +481,17 @@ class RelationsTest extends Testcase
 
         $pdo->setAttribute(\PDO::ATTR_ERRMODE, \PDO::ERRMODE_EXCEPTION);
 
-        $pdo->exec('CREATE TABLE users (id INTEGER PRIMARY KEY AUTOINCREMENT, name TEXT, age INTEGER, created_at TEXT, updated_at TEXT, deleted_at TEXT)');
+        $pdo->exec('CREATE TABLE users (id INTEGER PRIMARY KEY AUTOINCREMENT, name TEXT, age INTEGER, active TEXT, created_at TEXT, updated_at TEXT, deleted_at TEXT)');
 
         $pdo->exec('CREATE TABLE posts (id INTEGER PRIMARY KEY AUTOINCREMENT, user_id INTEGER, title TEXT, created_at TEXT, updated_at TEXT)');
 
         $pdo->exec('CREATE TABLE tags (id INTEGER PRIMARY KEY AUTOINCREMENT, name TEXT, created_at TEXT, updated_at TEXT)');
 
-        $pdo->exec('CREATE TABLE post_tag (post_id INTEGER, tag_id INTEGER, extra TEXT)');
+        $pdo->exec('CREATE TABLE post_tag (post_id INTEGER, tag_id INTEGER, extra TEXT, created_at TEXT, updated_at TEXT)');
+
+        $pdo->exec('CREATE TABLE profiles (id INTEGER PRIMARY KEY AUTOINCREMENT, user_id INTEGER, bio TEXT, created_at TEXT, updated_at TEXT)');
+
+        Model::setPdo('default', $pdo);
 
         $this->pdo = $pdo;
     }

@@ -2,6 +2,8 @@
 
 namespace Rougin\Ezekiel\Active\Relations;
 
+use Rougin\Ezekiel\Active\Depot;
+use Rougin\Ezekiel\Active\Manager;
 use Rougin\Ezekiel\Active\Model;
 
 /**
@@ -9,8 +11,13 @@ use Rougin\Ezekiel\Active\Model;
  *
  * @author Rougin Gutib <rougingutib@gmail.com>
  */
-class BelongsTo extends Relation
+class BelongsTo
 {
+    /**
+     * @var \Rougin\Ezekiel\Active\Depot
+     */
+    protected $depot;
+
     /**
      * @var string
      */
@@ -22,6 +29,21 @@ class BelongsTo extends Relation
     protected $owner;
 
     /**
+     * @var \Rougin\Ezekiel\Active\Model
+     */
+    protected $parent;
+
+    /**
+     * @var string
+     */
+    protected $related;
+
+    /**
+     * @var \Rougin\Ezekiel\Active\Model|null
+     */
+    protected $results = null;
+
+    /**
      * @param \Rougin\Ezekiel\Active\Model $parent
      * @param string                       $related
      * @param string|null                  $foreign
@@ -29,52 +51,20 @@ class BelongsTo extends Relation
      */
     public function __construct(Model $parent, $related, $foreign = null, $owner = null)
     {
-        parent::__construct($parent, $related);
-
         /** @var \Rougin\Ezekiel\Active\Model */
         $instance = new $related;
 
-        $pdo = $parent->getPdo();
+        $this->foreign = $foreign ?: $instance->getForeignKey();
 
-        if ($pdo)
-        {
-            $instance->setPdo($pdo);
-        }
+        $this->owner = $owner ?: $instance->getKeyName();
 
-        if (! $foreign)
-        {
-            $this->foreign = $instance->getForeignKey();
-        }
+        $this->parent = $parent;
 
-        if (! $owner)
-        {
-            $this->owner = $instance->getKeyName();
-        }
-    }
+        $this->related = $related;
 
-    /**
-     * @param \Rougin\Ezekiel\Active\Model[] $models
-     *
-     * @return void
-     */
-    public function addEagers(array $models)
-    {
-        $keys = array();
+        $name = $parent->getConnectionName();
 
-        foreach ($models as $model)
-        {
-            $key = $model->getAttribute($this->foreign);
-
-            if ($key !== null)
-            {
-                $keys[] = $key;
-            }
-        }
-
-        if (! empty($keys))
-        {
-            $this->query->whereIn($this->owner, $keys);
-        }
+        $this->depot = new Depot(new Manager, $name);
     }
 
     /**
@@ -82,49 +72,18 @@ class BelongsTo extends Relation
      */
     public function getResults()
     {
-        if ($this->results === null)
+        $value = $this->parent->{$this->foreign};
+
+        if ($value === null)
         {
-            $this->results = $this->query
-                ->where($this->owner, '=', $this->parent->getAttribute($this->foreign))
-                ->first();
+            return null;
         }
 
-        /** @var \Rougin\Ezekiel\Active\Model|null */
-        return $this->results;
-    }
+        $related = $this->related;
 
-    /**
-     * @param \Rougin\Ezekiel\Active\Model[] $models
-     * @param mixed                          $results
-     * @param string                         $relation
-     *
-     * @return void
-     */
-    public function match(array $models, $results, $relation)
-    {
-        $dictionary = array();
+        /** @var \Rougin\Ezekiel\Active\Model */
+        $model = new $related;
 
-        /** @var \Rougin\Ezekiel\Active\Model[] $resultList */
-        $resultList = is_array($results) ? $results : array();
-
-        foreach ($resultList as $result)
-        {
-            $key = $result->getAttribute($this->owner);
-
-            /** @var array<int|string, \Rougin\Ezekiel\Active\Model> $dictionary */
-
-            $dictionary[$key] = $result;
-        }
-
-        foreach ($models as $model)
-        {
-            $key = $model->getAttribute($this->foreign);
-
-            /** @var array<int|string, \Rougin\Ezekiel\Active\Model> $dictionary */
-
-            $value = isset($dictionary[$key]) ? $dictionary[$key] : null;
-
-            $model->setRelation($relation, $value);
-        }
+        return $model->where($this->owner, $value)->first();
     }
 }
