@@ -2,6 +2,12 @@
 
 namespace Rougin\Ezekiel\Active;
 
+use Rougin\Ezekiel\Active\Fixture\CastUser;
+use Rougin\Ezekiel\Active\Fixture\CustomTableUser;
+use Rougin\Ezekiel\Active\Fixture\FloatUser;
+use Rougin\Ezekiel\Active\Fixture\SoftDeleteModel;
+use Rougin\Ezekiel\Active\Fixture\SoftDeleteUser;
+use Rougin\Ezekiel\Active\Fixture\StringUser;
 use Rougin\Ezekiel\Active\Fixture\User;
 use Rougin\Ezekiel\Testcase;
 
@@ -454,7 +460,7 @@ class ModelTest extends Testcase
      */
     public function test_passed_if_cast_float()
     {
-        $model = $this->createFloatUser();
+        $model = new FloatUser;
 
         $model->id = 1;
 
@@ -468,7 +474,7 @@ class ModelTest extends Testcase
      */
     public function test_passed_if_cast_string()
     {
-        $model = $this->createStringUser();
+        $model = new StringUser;
 
         $model->id = 1;
 
@@ -540,10 +546,7 @@ class ModelTest extends Testcase
      */
     public function test_passed_if_soft_delete_builder()
     {
-        $model = new class () extends Model
-        {
-            protected $softDeletes = true;
-        };
+        $model = new SoftDeleteModel;
 
         $model->limit(0);
 
@@ -555,14 +558,7 @@ class ModelTest extends Testcase
      */
     public function test_passed_if_model_soft_delete()
     {
-        $model = new class () extends Model
-        {
-            protected $softDeletes = true;
-
-            protected $fillable = array('id', 'name');
-
-            protected $table = 'users';
-        };
+        $model = new SoftDeleteUser;
 
         $model->name = 'SoftDel';
 
@@ -595,10 +591,7 @@ class ModelTest extends Testcase
      */
     public function test_passed_if_cast_null_type()
     {
-        $model = new class () extends Model
-        {
-            protected $casts = array();
-        };
+        $model = new SoftDeleteModel;
 
         $model->id = 1;
 
@@ -612,10 +605,7 @@ class ModelTest extends Testcase
      */
     public function test_passed_if_cast_unknown_type()
     {
-        $model = new class () extends Model
-        {
-            protected $casts = array('meta' => 'json');
-        };
+        $model = new CastUser;
 
         $model->id = 1;
 
@@ -629,10 +619,7 @@ class ModelTest extends Testcase
      */
     public function test_passed_if_cast_returns_null_for_null()
     {
-        $model = new class () extends Model
-        {
-            protected $casts = array('score' => 'float');
-        };
+        $model = new FloatUser;
 
         $model->id = 1;
 
@@ -646,10 +633,7 @@ class ModelTest extends Testcase
      */
     public function test_passed_if_get_table_explicit()
     {
-        $model = new class () extends Model
-        {
-            protected $table = 'custom_table';
-        };
+        $model = new CustomTableUser;
 
         $this->assertEquals('custom_table', $model->getTable());
     }
@@ -666,36 +650,6 @@ class ModelTest extends Testcase
         $model->name = $name;
 
         $model->save();
-
-        return $model;
-    }
-
-    /**
-     * @return \Rougin\Ezekiel\Active\Model
-     */
-    protected function createFloatUser()
-    {
-        $model = new class () extends Model
-        {
-            protected $casts = array('score' => 'float');
-
-            protected $fillable = array('id', 'score');
-        };
-
-        return $model;
-    }
-
-    /**
-     * @return \Rougin\Ezekiel\Active\Model
-     */
-    protected function createStringUser()
-    {
-        $model = new class () extends Model
-        {
-            protected $casts = array('notes' => 'string');
-
-            protected $fillable = array('id', 'notes');
-        };
 
         return $model;
     }

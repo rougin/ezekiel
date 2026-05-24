@@ -450,7 +450,7 @@ class RelationsTest extends Testcase
 
         $sql = $query->toSql();
 
-        $this->assertStringContainsString('deleted_at', $sql);
+        $this->doAssertContains('deleted_at', $sql);
     }
 
     /**
