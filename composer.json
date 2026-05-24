@@ -18,6 +18,7 @@
   },
   "require-dev":
   {
+    "illuminate/database": "*",
     "phpunit/phpunit": "*",
     "sanmai/phpunit-legacy-adapter": "*"
   },

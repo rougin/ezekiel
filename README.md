@@ -175,6 +175,303 @@ foreach ($users as $user)
 }
 ```
 
+## Using "Active"
+
+The `Active` namespace provides a lightweight active-record implementation on top of Ezekiel's query builder. It serves as a drop-in replacement for [Eloquent](https://laravel.com/docs/eloquent) models without external dependencies:
+
+```php
+namespace App\Models;
+
+use Rougin\Ezekiel\Active\Model;
+
+class User extends Model
+{
+    /**
+     * @var array<string, string>
+     */
+    protected $casts = array('age' => 'integer');
+
+    /**
+     * @var string[]
+     */
+    protected $fillable = array('name', 'age');
+
+    /**
+     * @param string $value
+     *
+     * @return string
+     */
+    public function getNameAttribute($value)
+    {
+        return strtoupper($value);
+    }
+
+    /**
+     * @return \Rougin\Ezekiel\Active\Relations\HasMany
+     */
+    public function posts()
+    {
+        return $this->hasMany(__NAMESPACE__ . '\Post');
+    }
+}
+```
+
+To setup a model instance, use the existing `PDO` instance and set it to the same model (e.g., `User`):
+
+```php
+$pdo = new \PDO('sqlite::memory:');
+
+$user = new User;
+
+$user->setPdo($pdo);
+```
+
+Then use the available Eloquent methods for doing CRUD operations:
+
+```php
+// ...
+
+// Create a new user -----------
+$data = array('name' => 'John');
+
+$data['age'] = 25;
+
+$item = $user->create($data);
+// -----------------------------
+
+// Find or show all users ------------
+$items = $user->get();
+
+$item = $user->find(1);
+
+$adults = $user->where('age', '>', 18)
+    ->get();
+// -----------------------------------
+
+// Update the current user -----
+$data = array('age' => 26);
+
+$user->update($user->id, $data);
+// -----------------------------
+
+// Delete the specified user ---------
+$model = $user->where('name', 'John');
+
+$model = $model->first()->delete();
+// -----------------------------------
+```
+
+### Query builder methods
+
+The `Builder` class wraps Ezekiel's `Query` and provides an Eloquent-compatible fluent interface:
+
+| Method | Description |
+|---|---|
+| `where($column, $operator, $value)` | Basic where clause |
+| `orWhere($column, $operator, $value)` | OR where clause |
+| `whereIn($column, $values)` | WHERE IN clause |
+| `whereNull($column)` | WHERE IS NULL |
+| `whereNotNull($column)` | WHERE IS NOT NULL |
+| `orderBy($column, $direction)` | ORDER BY clause |
+| `limit($value)` | LIMIT clause |
+| `offset($value)` | OFFSET clause |
+| `groupBy($columns)` | GROUP BY clause |
+| `with($relations)` | Eager load relationships |
+| `select($columns)` | Override selected columns |
+| `distinct()` | SELECT DISTINCT |
+| `get($columns)` | Execute and return models |
+| `first($columns)` | Return first model or null |
+| `find($id, $columns)` | Find by primary key |
+| `findOrFail($id, $columns)` | Find or throw RuntimeException |
+| `count()` | Return row count |
+| `create($attrs)` | Insert and return model |
+| `update($values)` | Bulk update matching rows |
+| `delete()` | Delete matching rows |
+
+### Accessors and mutators
+
+Accessors follow Eloquent's `getFooAttribute($value)` convention. The column name in `snake_case` is transformed to `StudlyCase` internally:
+
+```php
+class User extends Model
+{
+    public function getFullNameAttribute($value)
+    {
+        return $this->first_name . ' ' . $this->last_name;
+    }
+
+    public function setEmailAttribute($value)
+    {
+        $this->attributes['email'] = strtolower($value);
+    }
+}
+
+echo $user->full_name; // triggers getFullNameAttribute
+
+$user->email = 'JOHN@EXAMPLE.COM'; // triggers setEmailAttribute
+```
+
+### Attribute casting
+
+The `$casts` property automatically converts attributes to their PHP types:
+
+```php
+protected $casts = array(
+
+    'age' => 'integer',
+    'active' => 'boolean',
+    'price' => 'float',
+    'notes' => 'string',
+
+);
+```
+
+### Mass assignment protection
+
+Use `$fillable` to whitelist or `$guarded` to blacklist attributes:
+
+```php
+class User extends Model
+{
+    /**
+     * Only these keys can be mass-assigned.
+     *
+     * @var string[]
+     */
+    protected $fillable = array('name', 'email');
+
+    /**
+     * These keys are blocked (default: '*' blocks all).
+     *
+     * @var string[]
+     */
+    protected $guarded = array('password', 'is_admin');
+}
+
+// Bypass protection
+$user->forceFill(array('is_admin' => true));
+```
+
+### Timestamps
+
+By default, `created_at` and `updated_at` are managed automatically. Use `$timestamps = false` to disable it in a specified `Model`:
+
+```php
+protected $timestamps = false;
+```
+
+### Soft deletes
+
+Activate soft deleting by setting `$softDelete = true`. Instead of removing rows, the `deleted_at` column is set:
+
+```php
+class User extends Model
+{
+    /**
+     * @var boolean
+     */
+    protected $softDelete = true;
+}
+
+// Sets "deleted_at", row remains
+$user->delete();
+
+// Returns "true" if soft-deleted 
+$user->trashed();
+
+// Sets "deleted_at" as "null"
+$user->restore();
+
+// Permanently removes the row
+$user->forceDelete();
+```
+
+### Relationships
+
+`Active` supports `hasMany`, `hasOne`, `belongsTo`, and `belongsToMany`:
+
+```php
+// One-to-many
+class User extends Model
+{
+    public function posts()
+    {
+        return $this->hasMany(Post::class);
+    }
+}
+
+// Inverse
+class Post extends Model
+{
+    public function user()
+    {
+        return $this->belongsTo(User::class);
+    }
+}
+
+// Many-to-many
+class Post extends Model
+{
+    public function tags()
+    {
+        return $this->belongsToMany(Tag::class, 'post_tag', 'post_id', 'tag_id')
+            ->withPivot('extra');
+    }
+}
+```
+
+Lazy loading and eager loading are both supported:
+
+```php
+// Lazy
+$user = $user->find(1);
+
+foreach ($user->posts as $post)
+{
+    // ...
+}
+
+// Eager
+$users = $user->with('posts')->get();
+```
+
+Pivot data is stored as `\stdClass` on the loaded model:
+
+```php
+$tags = $post->tags;
+
+echo $tags[0]->pivot->extra;
+```
+
+While the `attach` and `detach` methods manage pivot table rows:
+
+```php
+$post->tags()->attach($tagId, array('extra' => 'value'));
+
+$post->tags()->detach($tagId);
+```
+
+### Table name derivation
+
+When `$table` is not set, the table name is derived from the class name by converting `PascalCase` to `snake_case` and pluralising:
+
+```php
+class UserProfile extends Model
+{
+    // If not specified, it will be "user_profiles"
+}
+
+class User extends Model
+{
+    /**
+     * If not specified, it will be "users".
+     *
+     * @var string
+     */
+    protected $table = 'app_users';
+}          
+```
+
 ## Available methods
 
 All available SQL statements should be supported by `Ezekiel`. These includes `DELETE FROM`, `INSERT INTO`, `SELECT`, and `UPDATE`:
