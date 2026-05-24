@@ -53,11 +53,13 @@ class BelongsTo
         $default = $instance->getForeignKey();
 
         $this->foreign = $foreign ? $foreign : $default;
+        // ---------------------------------------------
 
         // Return the owner key from the parent ---
         $default = $instance->getPrimaryKey();
 
         $this->owner = $owner ? $owner : $default;
+        // ----------------------------------------
 
         $this->parent = $parent;
 

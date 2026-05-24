@@ -6,6 +6,9 @@ use Rougin\Ezekiel\Active\Fixture\Post;
 use Rougin\Ezekiel\Active\Fixture\Profile;
 use Rougin\Ezekiel\Active\Fixture\Tag;
 use Rougin\Ezekiel\Active\Fixture\User;
+use Rougin\Ezekiel\Dialect\SqliteDialect;
+use Rougin\Ezekiel\Schema\Design;
+use Rougin\Ezekiel\Schema\Table;
 use Rougin\Ezekiel\Testcase;
 
 /**
@@ -617,15 +620,60 @@ class RelationsTest extends Testcase
 
         $pdo->setAttribute(\PDO::ATTR_ERRMODE, \PDO::ERRMODE_EXCEPTION);
 
-        $pdo->exec('CREATE TABLE users (id INTEGER PRIMARY KEY AUTOINCREMENT, name TEXT, age INTEGER, active TEXT, created_at TEXT, updated_at TEXT, deleted_at TEXT)');
+        $dialect = new SqliteDialect;
 
-        $pdo->exec('CREATE TABLE posts (id INTEGER PRIMARY KEY AUTOINCREMENT, user_id INTEGER, title TEXT, created_at TEXT, updated_at TEXT)');
+        $table = new Table($dialect);
 
-        $pdo->exec('CREATE TABLE tags (id INTEGER PRIMARY KEY AUTOINCREMENT, name TEXT, created_at TEXT, updated_at TEXT)');
+        $table->create('users', function (Design $d)
+        {
+            $d->increments('id');
+            $d->text('name');
+            $d->integer('age')->nullable();
+            $d->text('active')->nullable();
+            $d->timestamps();
+            $d->softDeletes();
+        });
 
-        $pdo->exec('CREATE TABLE post_tag (post_id INTEGER, tag_id INTEGER, extra TEXT, created_at TEXT, updated_at TEXT)');
+        $pdo->exec($table->toSql());
 
-        $pdo->exec('CREATE TABLE profiles (id INTEGER PRIMARY KEY AUTOINCREMENT, user_id INTEGER, bio TEXT, created_at TEXT, updated_at TEXT)');
+        $table->create('posts', function (Design $d)
+        {
+            $d->increments('id');
+            $d->integer('user_id');
+            $d->text('title');
+            $d->timestamps();
+        });
+
+        $pdo->exec($table->toSql());
+
+        $table->create('tags', function (Design $d)
+        {
+            $d->increments('id');
+            $d->text('name');
+            $d->timestamps();
+        });
+
+        $pdo->exec($table->toSql());
+
+        $table->create('post_tag', function (Design $d)
+        {
+            $d->integer('post_id');
+            $d->integer('tag_id');
+            $d->text('extra')->nullable();
+            $d->timestamps();
+        });
+
+        $pdo->exec($table->toSql());
+
+        $table->create('profiles', function (Design $d)
+        {
+            $d->increments('id');
+            $d->integer('user_id');
+            $d->text('bio');
+            $d->timestamps();
+        });
+
+        $pdo->exec($table->toSql());
 
         Model::setPdo('default', $pdo);
 
