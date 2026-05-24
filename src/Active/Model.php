@@ -20,7 +20,7 @@ class Model
     /**
      * @var array<string, mixed>
      */
-    protected $attributes = array();
+    protected $attrs = array();
 
     /**
      * @var \Rougin\Ezekiel\Active\Builder|null
@@ -100,21 +100,26 @@ class Model
      */
     public function __get($key)
     {
-        $method = 'get' . $this->studly($key) . 'Attribute';
+        $method = $this->toAttr($key);
 
         if (method_exists($this, $method))
         {
-            $value = array_key_exists($key, $this->attributes) ? $this->attributes[$key] : null;
+            $value = null;
+
+            if (array_key_exists($key, $this->attrs))
+            {
+                $value = $this->attrs[$key];
+            }
 
             return $this->$method($value);
         }
 
-        // Check cached relations first ------
+        // Check cached relations first -------------
         if (array_key_exists($key, $this->relations))
         {
             return $this->relations[$key];
         }
-        // -----------------------------------
+        // ------------------------------------------
 
         if (method_exists($this, $key))
         {
@@ -122,21 +127,27 @@ class Model
 
             if ($relation instanceof BelongsToMany)
             {
-                $this->relations[$key] = $relation->getAll();
+                $items = $relation->getAll();
+
+                $this->relations[$key] = $items;
 
                 return $this->relations[$key];
             }
 
             if ($relation instanceof HasMany)
             {
-                $this->relations[$key] = $relation->getResults();
+                $items = $relation->getResults();
+
+                $this->relations[$key] = $items;
 
                 return $this->relations[$key];
             }
 
             if ($relation instanceof HasOne || $relation instanceof BelongsTo)
             {
-                $this->relations[$key] = $relation->getResults();
+                $items = $relation->getResults();
+
+                $this->relations[$key] = $items;
 
                 return $this->relations[$key];
             }
@@ -144,9 +155,9 @@ class Model
             return $relation;
         }
 
-        if (array_key_exists($key, $this->attributes))
+        if (array_key_exists($key, $this->attrs))
         {
-            return $this->cast($key, $this->attributes[$key]);
+            return $this->cast($key, $this->attrs[$key]);
         }
 
         return null;
@@ -159,7 +170,7 @@ class Model
      */
     public function __isset($key)
     {
-        return array_key_exists($key, $this->attributes);
+        return array_key_exists($key, $this->attrs);
     }
 
     /**
@@ -170,7 +181,7 @@ class Model
      */
     public function __set($key, $value)
     {
-        $this->attributes[$key] = $value;
+        $this->attrs[$key] = $value;
     }
 
     /**
@@ -181,6 +192,31 @@ class Model
     public function all()
     {
         return $this->get();
+    }
+
+    /**
+     * @param string      $related
+     * @param string|null $foreign
+     * @param string|null $owner
+     *
+     * @return \Rougin\Ezekiel\Active\Relations\BelongsTo
+     */
+    public function belongsTo($related, $foreign = null, $owner = null)
+    {
+        return new BelongsTo($this, $related, $foreign, $owner);
+    }
+
+    /**
+     * @param string      $related
+     * @param string|null $table
+     * @param string|null $foreign
+     * @param string|null $relatedKey
+     *
+     * @return \Rougin\Ezekiel\Active\Relations\BelongsToMany
+     */
+    public function belongsToMany($related, $table = null, $foreign = null, $relatedKey = null)
+    {
+        return new BelongsToMany($this, $related, $table, $foreign, $relatedKey);
     }
 
     /**
@@ -219,7 +255,7 @@ class Model
 
         $data[$instance->primaryKey] = $id;
 
-        $instance->attributes = $data;
+        $instance->attrs = $data;
 
         $instance->exists = true;
 
@@ -231,15 +267,15 @@ class Model
      */
     public function delete()
     {
-        $pk = $this->primaryKey;
+        $key = $this->primaryKey;
 
-        $id = $this->attributes[$pk];
+        $id = $this->attrs[$key];
 
         $table = $this->getTable();
 
         $depot = $this->getDepot();
 
-        return $depot->deleteRow($table, $pk, $id, $this->softDeletes);
+        return $depot->deleteRow($table, $key, $id, $this->softDeletes);
     }
 
     /**
@@ -293,9 +329,9 @@ class Model
 
         if ($result === null)
         {
-            $error = 'No record found';
+            $text = 'No record found';
 
-            throw new \UnexpectedValueException($error);
+            throw new \UnexpectedValueException($text);
         }
 
         return $result;
@@ -358,22 +394,6 @@ class Model
     }
 
     /**
-     * @return string
-     */
-    public function getKey()
-    {
-        return $this->primaryKey;
-    }
-
-    /**
-     * @return string
-     */
-    public function getKeyName()
-    {
-        return $this->primaryKey;
-    }
-
-    /**
      * @return \PDO
      */
     public function getPdo()
@@ -381,6 +401,14 @@ class Model
         $manager = new Manager;
 
         return $manager->get($this->connection);
+    }
+
+    /**
+     * @return string
+     */
+    public function getPrimaryKey()
+    {
+        return $this->primaryKey;
     }
 
     /**
@@ -398,6 +426,47 @@ class Model
 
         return strtolower(end($parts)) . 's';
         // --------------------------------------
+    }
+
+    /**
+     * @param string      $related
+     * @param string|null $foreign
+     * @param string|null $local
+     *
+     * @return \Rougin\Ezekiel\Active\Relations\HasMany
+     */
+    public function hasMany($related, $foreign = null, $local = null)
+    {
+        return new HasMany($this, $related, $foreign, $local);
+    }
+
+    /**
+     * @param string      $related
+     * @param string|null $foreign
+     * @param string|null $local
+     *
+     * @return \Rougin\Ezekiel\Active\Relations\HasOne
+     */
+    public function hasOne($related, $foreign = null, $local = null)
+    {
+        return new HasOne($this, $related, $foreign, $local);
+    }
+
+    /**
+     * @param string $related
+     *
+     * @return string
+     */
+    public function joiningTable($related)
+    {
+        /** @var \Rougin\Ezekiel\Active\Model $instance */
+        $instance = new $related;
+
+        $segments = array($this->getTable(), $instance->getTable());
+
+        sort($segments);
+
+        return strtolower($segments[0] . '_' . $segments[1]);
     }
 
     /**
@@ -445,23 +514,27 @@ class Model
      */
     public function save()
     {
-        if ($this->timestamps && ! array_key_exists('updated_at', $this->attributes))
+        // [TODO] Make "updated_at" updatable ---
+        $key = 'updated_at';
+        // --------------------------------------
+
+        if ($this->timestamps && ! array_key_exists($key, $this->attrs))
         {
-            $this->attributes['updated_at'] = date('Y-m-d H:i:s');
+            $this->attrs[$key] = date('Y-m-d H:i:s');
         }
 
         if (! $this->exists)
         {
-            $instance = $this->create($this->attributes);
+            $instance = $this->create($this->attrs);
 
-            $this->attributes = $instance->attributes;
+            $this->attrs = $instance->attrs;
 
             $this->exists = true;
 
             return true;
         }
 
-        $data = $this->attributes;
+        $data = $this->attrs;
 
         $pk = $this->primaryKey;
 
@@ -475,7 +548,7 @@ class Model
 
         $result = $depot->updateRow($table, $pk, $id, $data);
 
-        $this->attributes[$pk] = $id;
+        $this->attrs[$pk] = $id;
 
         return $result;
     }
@@ -495,7 +568,7 @@ class Model
      */
     public function toArray()
     {
-        return $this->attributes;
+        return $this->attrs;
     }
 
     /**
@@ -554,72 +627,6 @@ class Model
         $this->eagers = array_merge($this->eagers, $relations);
 
         return $this;
-    }
-
-    /**
-     * @param string      $related
-     * @param string|null $foreign
-     * @param string|null $owner
-     *
-     * @return \Rougin\Ezekiel\Active\Relations\BelongsTo
-     */
-    public function belongsTo($related, $foreign = null, $owner = null)
-    {
-        return new BelongsTo($this, $related, $foreign, $owner);
-    }
-
-    /**
-     * @param string      $related
-     * @param string|null $table
-     * @param string|null $foreignKey
-     * @param string|null $relatedKey
-     *
-     * @return \Rougin\Ezekiel\Active\Relations\BelongsToMany
-     */
-    public function belongsToMany($related, $table = null, $foreignKey = null, $relatedKey = null)
-    {
-        return new BelongsToMany($this, $related, $table, $foreignKey, $relatedKey);
-    }
-
-    /**
-     * @param string      $related
-     * @param string|null $foreignKey
-     * @param string|null $localKey
-     *
-     * @return \Rougin\Ezekiel\Active\Relations\HasMany
-     */
-    public function hasMany($related, $foreignKey = null, $localKey = null)
-    {
-        return new HasMany($this, $related, $foreignKey, $localKey);
-    }
-
-    /**
-     * @param string      $related
-     * @param string|null $foreignKey
-     * @param string|null $localKey
-     *
-     * @return \Rougin\Ezekiel\Active\Relations\HasOne
-     */
-    public function hasOne($related, $foreignKey = null, $localKey = null)
-    {
-        return new HasOne($this, $related, $foreignKey, $localKey);
-    }
-
-    /**
-     * @param string $related
-     *
-     * @return string
-     */
-    public function joiningTable($related)
-    {
-        /** @var \Rougin\Ezekiel\Active\Model $instance */
-        $instance = new $related;
-
-        $segments = array($this->getTable(), $instance->getTable());
-
-        sort($segments);
-
-        return strtolower($segments[0] . '_' . $segments[1]);
     }
 
     /**
@@ -748,19 +755,19 @@ class Model
     }
 
     /**
-     * @param array<string, mixed> $attributes
+     * @param array<string, mixed> $attrs
      * @param boolean              $exists
      *
      * @return static
      */
-    protected function newInstance($attributes = array(), $exists = false)
+    protected function newInstance($attrs = array(), $exists = false)
     {
         $class = get_class($this);
 
         /** @var static */
         $model = new $class;
 
-        $model->attributes = $attributes;
+        $model->attrs = $attrs;
 
         $model->casts = $this->casts;
 
@@ -794,7 +801,7 @@ class Model
      *
      * @return string
      */
-    protected function studly($value)
+    protected function toAttr($value)
     {
         $result = '';
 
@@ -805,6 +812,6 @@ class Model
             $result .= ucfirst(strtolower($part));
         }
 
-        return $result;
+        return 'get' . $result . 'Attribute';
     }
 }

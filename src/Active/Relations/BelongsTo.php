@@ -39,11 +39,6 @@ class BelongsTo
     protected $related;
 
     /**
-     * @var \Rougin\Ezekiel\Active\Model|null
-     */
-    protected $results = null;
-
-    /**
      * @param \Rougin\Ezekiel\Active\Model $parent
      * @param string                       $related
      * @param string|null                  $foreign
@@ -54,9 +49,17 @@ class BelongsTo
         /** @var \Rougin\Ezekiel\Active\Model */
         $instance = new $related;
 
-        $this->foreign = $foreign ?: $instance->getForeignKey();
+        // Return foreign key from the related model ---
+        $default = $instance->getForeignKey();
 
-        $this->owner = $owner ?: $instance->getKeyName();
+        $this->foreign = $foreign ? $foreign : $default;
+        // ---------------------------------------------
+
+        // Return the owner key from the parent ---
+        $default = $instance->getPrimaryKey();
+
+        $this->owner = $owner ? $owner : $default;
+        // ----------------------------------------
 
         $this->parent = $parent;
 
@@ -84,6 +87,8 @@ class BelongsTo
         /** @var \Rougin\Ezekiel\Active\Model */
         $model = new $related;
 
-        return $model->where($this->owner, $value)->first();
+        $model = $model->where($this->owner, $value);
+
+        return $model->first();
     }
 }

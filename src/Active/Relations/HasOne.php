@@ -21,12 +21,12 @@ class HasOne
     /**
      * @var string
      */
-    protected $foreignKey;
+    protected $foreign;
 
     /**
      * @var string
      */
-    protected $localKey;
+    protected $local;
 
     /**
      * @var \Rougin\Ezekiel\Active\Model
@@ -46,14 +46,22 @@ class HasOne
     /**
      * @param \Rougin\Ezekiel\Active\Model $parent
      * @param string                       $related
-     * @param string|null                  $foreignKey
-     * @param string|null                  $localKey
+     * @param string|null                  $foreign
+     * @param string|null                  $local
      */
-    public function __construct(Model $parent, $related, $foreignKey = null, $localKey = null)
+    public function __construct(Model $parent, $related, $foreign = null, $local = null)
     {
-        $this->foreignKey = $foreignKey ?: $parent->getForeignKey();
+        // Return foreign key from the parent model ---
+        $default = $parent->getForeignKey();
 
-        $this->localKey = $localKey ?: $parent->getKeyName();
+        $this->foreign = $foreign ? $foreign : $default;
+        // ---------------------------------------------
+
+        // Return key from the parent model ------
+        $default = $parent->getPrimaryKey();
+
+        $this->local = $local ? $local : $default;
+        // ---------------------------------------
 
         $this->parent = $parent;
 
@@ -69,7 +77,7 @@ class HasOne
      */
     public function getResults()
     {
-        $value = $this->parent->{$this->localKey};
+        $value = $this->parent->{$this->local};
 
         if ($value === null)
         {
@@ -81,6 +89,6 @@ class HasOne
         /** @var \Rougin\Ezekiel\Active\Model */
         $model = new $related;
 
-        return $model->where($this->foreignKey, $value)->first();
+        return $model->where($this->foreign, $value)->first();
     }
 }

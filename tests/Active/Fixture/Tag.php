@@ -11,6 +11,9 @@ use Rougin\Ezekiel\Active\Model;
  */
 class Tag extends Model
 {
+    /**
+     * @var string[]
+     */
     protected $fillable = array('id', 'name');
 
     /**

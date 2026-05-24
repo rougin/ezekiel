@@ -11,7 +11,14 @@ use Rougin\Ezekiel\Active\Model;
  */
 class User extends Model
 {
+    /**
+     * @var string[]
+     */
     protected $fillable = array('id', 'name', 'age', 'active');
+
+    /**
+     * @var array<string, string>
+     */
     protected $casts = array('age' => 'integer', 'active' => 'boolean');
 
     /**

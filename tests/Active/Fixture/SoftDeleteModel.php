@@ -11,5 +11,8 @@ use Rougin\Ezekiel\Active\Model;
  */
 class SoftDeleteModel extends Model
 {
+    /**
+     * @var boolean
+     */
     protected $softDeletes = true;
 }

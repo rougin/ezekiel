@@ -11,7 +11,13 @@ use Rougin\Ezekiel\Active\Model;
  */
 class FloatUser extends Model
 {
+    /**
+     * @var array<string, string>
+     */
     protected $casts = array('score' => 'float');
 
+    /**
+     * @var string[]
+     */
     protected $fillable = array('id', 'score');
 }

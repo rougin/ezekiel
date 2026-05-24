@@ -12,7 +12,7 @@ class Manager
     /**
      * @var array<string, \PDO>
      */
-    protected static $connections = array();
+    protected static $pdos = array();
 
     /**
      * @param string $name
@@ -22,7 +22,7 @@ class Manager
      */
     public static function set($name, \PDO $pdo)
     {
-        static::$connections[$name] = $pdo;
+        static::$pdos[$name] = $pdo;
     }
 
     /**
@@ -32,6 +32,6 @@ class Manager
      */
     public function get($name)
     {
-        return static::$connections[$name];
+        return static::$pdos[$name];
     }
 }

@@ -26,6 +26,151 @@ class ModelTest extends Testcase
     /**
      * @return void
      */
+    public function test_passed_if_all_returns_models()
+    {
+        $expect = 'Rougin\Ezekiel\Active\Fixture\User';
+
+        $this->createUser('AllTest');
+
+        $query = new User;
+
+        $results = $query->all();
+
+        $this->assertCount(1, $results);
+
+        $this->assertInstanceOf($expect, $results[0]);
+    }
+
+    /**
+     * @return void
+     */
+    public function test_passed_if_attribute_is_set()
+    {
+        $model = new User;
+
+        $model->name = 'John';
+
+        $this->assertTrue(isset($model->name));
+
+        $this->assertFalse(isset($model->unknown));
+    }
+
+    /**
+     * @return void
+     */
+    public function test_passed_if_cast_boolean()
+    {
+        $user = new User;
+
+        $user->active = '1';
+
+        $this->assertSame(true, $user->active);
+    }
+
+    /**
+     * @return void
+     */
+    public function test_passed_if_cast_float()
+    {
+        $model = new FloatUser;
+
+        $model->id = 1;
+
+        $model->score = '95.5';
+
+        $this->assertSame(95.5, $model->score);
+    }
+
+    /**
+     * @return void
+     */
+    public function test_passed_if_cast_null_type()
+    {
+        $model = new SoftDeleteModel;
+
+        $model->id = 1;
+
+        $model->name = 'Test';
+
+        $this->assertEquals('Test', $model->name);
+    }
+
+    /**
+     * @return void
+     */
+    public function test_passed_if_cast_returns_null_for_null()
+    {
+        $model = new FloatUser;
+
+        $model->id = 1;
+
+        $model->score = null;
+
+        $this->assertNull($model->score);
+    }
+
+    /**
+     * @return void
+     */
+    public function test_passed_if_cast_string()
+    {
+        $model = new StringUser;
+
+        $model->id = 1;
+
+        $model->notes = 123;
+
+        $this->assertSame('123', $model->notes);
+    }
+
+    /**
+     * @return void
+     */
+    public function test_passed_if_cast_unknown_type()
+    {
+        $model = new CastUser;
+
+        $model->id = 1;
+
+        $model->meta = '{"key":"val"}';
+
+        $this->assertEquals('{"key":"val"}', $model->meta);
+    }
+
+    /**
+     * @return void
+     */
+    public function test_passed_if_count_uses_scalar_bind()
+    {
+        $this->createUser('ScalarCount');
+
+        $query = new User;
+
+        $count = $query->where('name', 'ScalarCount')->count();
+
+        $this->assertEquals(1, $count);
+    }
+
+    /**
+     * @return void
+     */
+    public function test_passed_if_count_uses_where_in()
+    {
+        $one = $this->createUser('User1');
+        $two = $this->createUser('User2');
+
+        $ids = array($one->id, $two->id);
+
+        $query = new User;
+
+        $result = $query->whereIn('id', $ids)->count();
+
+        $this->assertEquals(2, $result);
+    }
+
+    /**
+     * @return void
+     */
     public function test_passed_if_delete_on_nonexistent()
     {
         $model = new User;
@@ -50,42 +195,15 @@ class ModelTest extends Testcase
     /**
      * @return void
      */
-    public function test_passed_if_attribute_is_set()
-    {
-        $model = new User;
-
-        $model->name = 'John';
-
-        $this->assertTrue(isset($model->name));
-
-        $this->assertFalse(isset($model->unknown));
-    }
-
-    /**
-     * @return void
-     */
-    public function test_passed_if_count_uses_where_in()
-    {
-        $one = $this->createUser('User1');
-        $two = $this->createUser('User2');
-
-        $ids = array($one->id, $two->id);
-
-        $result = (new User)->whereIn('id', $ids)->count();
-
-        $this->assertEquals(2, $result);
-    }
-
-    /**
-     * @return void
-     */
     public function test_passed_if_delete_works()
     {
         $user = $this->createUser('ToDelete');
 
         $user->delete();
 
-        $found = (new User)->find($user->id);
+        $query = new User;
+
+        $found = $query->find($user->id);
 
         $this->assertNull($found);
     }
@@ -97,7 +215,9 @@ class ModelTest extends Testcase
     {
         $this->createUser('DefaultOp');
 
-        $found = (new User)->where('name', 'DefaultOp')->firstOrFail();
+        $query = new User;
+
+        $found = $query->where('name', 'DefaultOp')->firstOrFail();
 
         $this->assertEquals('DefaultOp', $found->name);
     }
@@ -109,7 +229,9 @@ class ModelTest extends Testcase
     {
         $this->createUser('GTTest');
 
-        $found = (new User)->where('id', 0)->orWhere('id', '>', 0)->firstOrFail();
+        $query = new User;
+
+        $found = $query->where('id', 0)->orWhere('id', '>', 0)->firstOrFail();
 
         $this->assertEquals('GTTest', $found->name);
     }
@@ -121,7 +243,9 @@ class ModelTest extends Testcase
     {
         $user = $this->createUser('GTETest');
 
-        $found = (new User)->where('id', 0)->orWhere('id', '>=', $user->id)->firstOrFail();
+        $query = new User;
+
+        $found = $query->where('id', 0)->orWhere('id', '>=', $user->id)->firstOrFail();
 
         $this->assertEquals('GTETest', $found->name);
     }
@@ -133,7 +257,9 @@ class ModelTest extends Testcase
     {
         $this->createUser('LTTest');
 
-        $found = (new User)->where('id', 0)->orWhere('id', '<', 99999)->firstOrFail();
+        $query = new User;
+
+        $found = $query->where('id', 0)->orWhere('id', '<', 99999)->firstOrFail();
 
         $this->assertEquals('LTTest', $found->name);
     }
@@ -145,7 +271,9 @@ class ModelTest extends Testcase
     {
         $this->createUser('LikeTest');
 
-        $found = (new User)->where('name', '')->orWhere('name', 'LIKE', '%Like%')->firstOrFail();
+        $query = new User;
+
+        $found = $query->where('name', '')->orWhere('name', 'LIKE', '%Like%')->firstOrFail();
 
         $this->assertEquals('LikeTest', $found->name);
     }
@@ -157,7 +285,9 @@ class ModelTest extends Testcase
     {
         $user = $this->createUser('LTETest');
 
-        $found = (new User)->where('id', 0)->orWhere('id', '<=', $user->id)->firstOrFail();
+        $query = new User;
+
+        $found = $query->where('id', 0)->orWhere('id', '<=', $user->id)->firstOrFail();
 
         $this->assertEquals('LTETest', $found->name);
     }
@@ -169,7 +299,9 @@ class ModelTest extends Testcase
     {
         $this->createUser('ShouldMatch');
 
-        $found = (new User)->where('name', '')->orWhere('name', '!=', 'Other')->firstOrFail();
+        $query = new User;
+
+        $found = $query->where('name', '')->orWhere('name', '!=', 'Other')->firstOrFail();
 
         $this->assertEquals('ShouldMatch', $found->name);
     }
@@ -181,31 +313,11 @@ class ModelTest extends Testcase
     {
         $this->createUser('Fallback');
 
-        $found = (new User)->where('name', '')->orWhere('name', 'UNKNOWN', 'Fallback')->firstOrFail();
+        $query = new User;
+
+        $found = $query->where('name', '')->orWhere('name', 'UNKNOWN', 'Fallback')->firstOrFail();
 
         $this->assertEquals('Fallback', $found->name);
-    }
-
-    /**
-     * @return void
-     */
-    public function test_passed_if_find_returns_model()
-    {
-        $user = $this->createUser('FindMe');
-
-        $found = (new User)->find($user->id);
-
-        $this->assertEquals('FindMe', $found->name);
-    }
-
-    /**
-     * @return void
-     */
-    public function test_passed_if_find_returns_null()
-    {
-        $found = (new User)->find(99999);
-
-        $this->assertNull($found);
     }
 
     /**
@@ -215,9 +327,37 @@ class ModelTest extends Testcase
     {
         $user = $this->createUser('FindOrFail');
 
-        $found = (new User)->findOrFail($user->id);
+        $query = new User;
+
+        $found = $query->findOrFail($user->id);
 
         $this->assertEquals('FindOrFail', $found->name);
+    }
+
+    /**
+     * @return void
+     */
+    public function test_passed_if_find_returns_model()
+    {
+        $user = $this->createUser('FindMe');
+
+        $query = new User;
+
+        $found = $query->find($user->id);
+
+        $this->assertEquals('FindMe', $found->name);
+    }
+
+    /**
+     * @return void
+     */
+    public function test_passed_if_find_returns_null()
+    {
+        $query = new User;
+
+        $found = $query->find(99999);
+
+        $this->assertNull($found);
     }
 
     /**
@@ -227,7 +367,9 @@ class ModelTest extends Testcase
     {
         $this->doExpectException('UnexpectedValueException');
 
-        (new User)->firstOrFail();
+        $query = new User;
+
+        $query->firstOrFail();
     }
 
     /**
@@ -237,7 +379,9 @@ class ModelTest extends Testcase
     {
         $this->createUser('FirstModel');
 
-        $found = (new User)->first();
+        $query = new User;
+
+        $found = $query->first();
 
         $this->assertEquals('FirstModel', $found->name);
     }
@@ -247,7 +391,9 @@ class ModelTest extends Testcase
      */
     public function test_passed_if_first_returns_null()
     {
-        $found = (new User)->where('name', 'None')->first();
+        $query = new User;
+
+        $found = $query->where('name', 'None')->first();
 
         $this->assertNull($found);
     }
@@ -265,15 +411,61 @@ class ModelTest extends Testcase
     /**
      * @return void
      */
+    public function test_passed_if_get_accessor_called()
+    {
+        $user = new User;
+
+        $user->name = 'john';
+
+        $this->assertEquals('john', $user->name);
+    }
+
+    /**
+     * @return void
+     */
     public function test_passed_if_get_returns_models()
     {
         $this->createUser('GetTest');
 
-        $results = (new User)->get();
+        $query = new User;
+
+        $results = $query->get();
 
         $this->assertCount(1, $results);
 
         $this->assertInstanceOf('Rougin\Ezekiel\Active\Fixture\User', $results[0]);
+    }
+
+    /**
+     * @return void
+     */
+    public function test_passed_if_get_table_explicit()
+    {
+        $model = new CustomTableUser;
+
+        $this->assertEquals('custom_table', $model->getTable());
+    }
+
+    /**
+     * @return void
+     */
+    public function test_passed_if_get_table_fallback()
+    {
+        $user = new User;
+
+        $this->assertEquals('users', $user->getTable());
+    }
+
+    /**
+     * @return void
+     */
+    public function test_passed_if_has_one_factory()
+    {
+        $user = $this->createUser('John');
+
+        $relation = $user->profile();
+
+        $this->assertInstanceOf('Rougin\Ezekiel\Active\Relations\HasOne', $relation);
     }
 
     /**
@@ -293,34 +485,18 @@ class ModelTest extends Testcase
     /**
      * @return void
      */
-    public function test_passed_if_key_is_returned()
-    {
-        $user = new User;
-
-        $this->assertEquals('id', $user->getKey());
-    }
-
-    /**
-     * @return void
-     */
-    public function test_passed_if_key_name_is_returned()
-    {
-        $user = new User;
-
-        $this->assertEquals('id', $user->getKeyName());
-    }
-
-    /**
-     * @return void
-     */
     public function test_passed_if_limit_uses_offset()
     {
         $this->createUser('First');
+
         $this->createUser('Second');
 
-        $results = (new User)->limit(1)->offset(1)->get();
+        $query = new User;
+
+        $results = $query->limit(1)->offset(1)->get();
 
         $this->assertCount(1, $results);
+
         $this->assertEquals('Second', $results[0]->name);
     }
 
@@ -363,6 +539,27 @@ class ModelTest extends Testcase
     /**
      * @return void
      */
+    public function test_passed_if_model_soft_delete()
+    {
+        $model = new SoftDeleteUser;
+
+        $model->name = 'SoftDel';
+
+        $model->save();
+
+        $model->delete();
+
+        /** @var \PDOStatement $stmt */
+        $stmt = $this->pdo->query('SELECT deleted_at FROM users WHERE id = ' . $model->id);
+
+        $row = $stmt->fetch(\PDO::FETCH_ASSOC);
+
+        $this->assertNotNull($row['deleted_at']);
+    }
+
+    /**
+     * @return void
+     */
     public function test_passed_if_pdo_default_fallback()
     {
         $model = new User;
@@ -398,9 +595,23 @@ class ModelTest extends Testcase
 
         $this->assertTrue($model->exists);
 
-        $found = (new User)->findOrFail($model->id);
+        $query = new User;
+
+        $found = $query->findOrFail($model->id);
 
         $this->assertEquals('Direct Save', $found->name);
+    }
+
+    /**
+     * @return void
+     */
+    public function test_passed_if_soft_delete_builder()
+    {
+        $model = new SoftDeleteModel;
+
+        $model->limit(0);
+
+        $this->assertInstanceOf('Rougin\Ezekiel\Active\Model', $model);
     }
 
     /**
@@ -432,82 +643,6 @@ class ModelTest extends Testcase
     /**
      * @return void
      */
-    public function test_passed_if_all_returns_models()
-    {
-        $this->createUser('AllTest');
-
-        $results = (new User)->all();
-
-        $this->assertCount(1, $results);
-
-        $this->assertInstanceOf('Rougin\Ezekiel\Active\Fixture\User', $results[0]);
-    }
-
-    /**
-     * @return void
-     */
-    public function test_passed_if_cast_boolean()
-    {
-        $user = new User;
-
-        $user->active = '1';
-
-        $this->assertSame(true, $user->active);
-    }
-
-    /**
-     * @return void
-     */
-    public function test_passed_if_cast_float()
-    {
-        $model = new FloatUser;
-
-        $model->id = 1;
-
-        $model->score = '95.5';
-
-        $this->assertSame(95.5, $model->score);
-    }
-
-    /**
-     * @return void
-     */
-    public function test_passed_if_cast_string()
-    {
-        $model = new StringUser;
-
-        $model->id = 1;
-
-        $model->notes = 123;
-
-        $this->assertSame('123', $model->notes);
-    }
-
-    /**
-     * @return void
-     */
-    public function test_passed_if_get_accessor_called()
-    {
-        $user = new User;
-
-        $user->name = 'john';
-
-        $this->assertEquals('john', $user->name);
-    }
-
-    /**
-     * @return void
-     */
-    public function test_passed_if_get_table_fallback()
-    {
-        $user = new User;
-
-        $this->assertEquals('users', $user->getTable());
-    }
-
-    /**
-     * @return void
-     */
     public function test_passed_if_to_array_works()
     {
         $user = $this->createUser('ArrayTest');
@@ -527,115 +662,6 @@ class ModelTest extends Testcase
         $user->update(array('name' => 'UpdNew'));
 
         $this->assertEquals('UpdNew', $user->name);
-    }
-
-    /**
-     * @return void
-     */
-    public function test_passed_if_has_one_factory()
-    {
-        $user = $this->createUser('John');
-
-        $relation = $user->profile();
-
-        $this->assertInstanceOf('Rougin\Ezekiel\Active\Relations\HasOne', $relation);
-    }
-
-    /**
-     * @return void
-     */
-    public function test_passed_if_soft_delete_builder()
-    {
-        $model = new SoftDeleteModel;
-
-        $model->limit(0);
-
-        $this->assertInstanceOf('Rougin\Ezekiel\Active\Model', $model);
-    }
-
-    /**
-     * @return void
-     */
-    public function test_passed_if_model_soft_delete()
-    {
-        $model = new SoftDeleteUser;
-
-        $model->name = 'SoftDel';
-
-        $model->save();
-
-        $model->delete();
-
-        /** @var \PDOStatement $stmt */
-        $stmt = $this->pdo->query('SELECT deleted_at FROM users WHERE id = ' . $model->id);
-
-        $row = $stmt->fetch(\PDO::FETCH_ASSOC);
-
-        $this->assertNotNull($row['deleted_at']);
-    }
-
-    /**
-     * @return void
-     */
-    public function test_passed_if_count_uses_scalar_bind()
-    {
-        $this->createUser('ScalarCount');
-
-        $count = (new User)->where('name', 'ScalarCount')->count();
-
-        $this->assertEquals(1, $count);
-    }
-
-    /**
-     * @return void
-     */
-    public function test_passed_if_cast_null_type()
-    {
-        $model = new SoftDeleteModel;
-
-        $model->id = 1;
-
-        $model->name = 'Test';
-
-        $this->assertEquals('Test', $model->name);
-    }
-
-    /**
-     * @return void
-     */
-    public function test_passed_if_cast_unknown_type()
-    {
-        $model = new CastUser;
-
-        $model->id = 1;
-
-        $model->meta = '{"key":"val"}';
-
-        $this->assertEquals('{"key":"val"}', $model->meta);
-    }
-
-    /**
-     * @return void
-     */
-    public function test_passed_if_cast_returns_null_for_null()
-    {
-        $model = new FloatUser;
-
-        $model->id = 1;
-
-        $model->score = null;
-
-        $this->assertNull($model->score);
-    }
-
-    /**
-     * @return void
-     */
-    public function test_passed_if_get_table_explicit()
-    {
-        $model = new CustomTableUser;
-
-        $this->assertEquals('custom_table', $model->getTable());
     }
 
     /**

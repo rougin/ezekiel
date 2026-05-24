@@ -11,7 +11,13 @@ use Rougin\Ezekiel\Active\Model;
  */
 class StringUser extends Model
 {
+    /**
+     * @var array<string, string>
+     */
     protected $casts = array('notes' => 'string');
 
+    /**
+     * @var string[]
+     */
     protected $fillable = array('id', 'notes');
 }

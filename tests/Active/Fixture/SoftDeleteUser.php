@@ -11,9 +11,18 @@ use Rougin\Ezekiel\Active\Model;
  */
 class SoftDeleteUser extends Model
 {
+    /**
+     * @var boolean
+     */
     protected $softDeletes = true;
 
+    /**
+     * @var string[]
+     */
     protected $fillable = array('id', 'name');
 
+    /**
+     * @var string
+     */
     protected $table = 'users';
 }

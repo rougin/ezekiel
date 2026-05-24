@@ -23,7 +23,7 @@ class BelongsToMany
     /**
      * @var string
      */
-    protected $foreignKey;
+    protected $foreign;
 
     /**
      * @var \Rougin\Ezekiel\Active\Model
@@ -46,11 +46,6 @@ class BelongsToMany
     protected $relatedKey;
 
     /**
-     * @var \Rougin\Ezekiel\Active\Model[]
-     */
-    protected $results = array();
-
-    /**
      * @var string
      */
     protected $table;
@@ -64,23 +59,40 @@ class BelongsToMany
      * @param \Rougin\Ezekiel\Active\Model $parent
      * @param string                       $related
      * @param string|null                  $table
-     * @param string|null                  $foreignKey
+     * @param string|null                  $foreign
      * @param string|null                  $relatedKey
      */
-    public function __construct(Model $parent, $related, $table = null, $foreignKey = null, $relatedKey = null)
+    public function __construct(Model $parent, $related, $table = null, $foreign = null, $relatedKey = null)
     {
         /** @var \Rougin\Ezekiel\Active\Model */
         $instance = new $related;
 
-        $this->foreignKey = $foreignKey ?: $parent->getForeignKey();
+        // Return foreign key from the parent model ---
+        $default = $parent->getForeignKey();
+
+        $this->foreign = $foreign ? $foreign : $default;
+        // ---------------------------------------------
 
         $this->parent = $parent;
 
         $this->related = $related;
 
-        $this->relatedKey = $relatedKey ?: $instance->getForeignKey();
+        // Return related key from the related model ---
+        $default = $instance->getForeignKey();
 
-        $this->table = $table ?: $parent->joiningTable($related);
+        $this->relatedKey = $relatedKey;
+
+        if (! $relatedKey)
+        {
+            $this->relatedKey = $default;
+        }
+        // ---------------------------------------------
+
+        // Return joining table from the parent model ---
+        $default = $parent->joiningTable($related);
+
+        $this->table = $table ? $table : $default;
+        // ----------------------------------------------
 
         $name = $parent->getConnectionName();
 
@@ -95,11 +107,11 @@ class BelongsToMany
      */
     public function attach($id, $data = array())
     {
-        $key = $this->parent->getKey();
+        $key = $this->parent->getPrimaryKey();
 
         $value = $this->parent->{$key};
 
-        $attrs = array($this->foreignKey => $value);
+        $attrs = array($this->foreign => $value);
 
         $attrs[$this->relatedKey] = $id;
 
@@ -122,7 +134,7 @@ class BelongsToMany
      */
     public function getAll()
     {
-        $key = $this->parent->getKey();
+        $key = $this->parent->getPrimaryKey();
 
         $parentValue = $this->parent->{$key};
 
@@ -136,7 +148,7 @@ class BelongsToMany
 
         $builder = new Builder($dialect, $table);
 
-        $builder->where($this->foreignKey, $parentValue);
+        $builder->where($this->foreign, $parentValue);
 
         /** @var array<integer, array<string, string>> */
         $rows = $this->depot->get($builder);
@@ -157,7 +169,7 @@ class BelongsToMany
 
         if (empty($ids))
         {
-            return $this->results;
+            return array();
         }
 
         $related = $this->related;
@@ -169,7 +181,7 @@ class BelongsToMany
 
         foreach ($models as $model)
         {
-            $key = $model->getKey();
+            $key = $model->getPrimaryKey();
 
             $rid = $model->{$key};
 
@@ -201,9 +213,7 @@ class BelongsToMany
             $model->setPivot((object) $data);
         }
 
-        $this->results = $models;
-
-        return $this->results;
+        return $models;
     }
 
     /**

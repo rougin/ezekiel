@@ -11,6 +11,9 @@ use Rougin\Ezekiel\Active\Model;
  */
 class Profile extends Model
 {
+    /**
+     * @var string[]
+     */
     protected $fillable = array('id', 'user_id', 'bio');
 
     /**

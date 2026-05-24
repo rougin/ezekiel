@@ -208,9 +208,9 @@ class Builder
     {
         $this->limit = null;
 
-        $this->offset = null;
-
         $this->wheres = array();
+
+        $this->offset = null;
     }
 
     /**

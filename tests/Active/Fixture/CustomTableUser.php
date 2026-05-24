@@ -11,5 +11,8 @@ use Rougin\Ezekiel\Active\Model;
  */
 class CustomTableUser extends Model
 {
+    /**
+     * @var string
+     */
     protected $table = 'custom_table';
 }

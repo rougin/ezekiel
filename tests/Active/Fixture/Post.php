@@ -11,7 +11,14 @@ use Rougin\Ezekiel\Active\Model;
  */
 class Post extends Model
 {
+    /**
+     * @var string[]
+     */
     protected $fillable = array('id', 'user_id', 'title');
+
+    /**
+     * @var array<string, string>
+     */
     protected $casts = array('user_id' => 'integer');
 
     /**

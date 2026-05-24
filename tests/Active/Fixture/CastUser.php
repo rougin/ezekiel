@@ -11,5 +11,8 @@ use Rougin\Ezekiel\Active\Model;
  */
 class CastUser extends Model
 {
+    /**
+     * @var array<string, string>
+     */
     protected $casts = array('meta' => 'json');
 }
