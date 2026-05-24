@@ -4,13 +4,14 @@ namespace Rougin\Ezekiel\Query;
 
 use Rougin\Ezekiel\Query;
 use Rougin\Ezekiel\QueryInterface;
+use Rougin\Ezekiel\ValueInterface;
 
 /**
  * @package Ezekiel
  *
  * @author Rougin Gutib <rougingutib@gmail.com>
  */
-class Compare implements QueryInterface
+class Compare implements QueryInterface, ValueInterface
 {
     const GROUP_AND = 1;
 

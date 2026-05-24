@@ -92,26 +92,7 @@ class Result
 
         $stmt = $this->pdo->prepare($sql);
 
-        $binds = $query->getBinds();
-
-        $flat = array();
-
-        foreach ($binds as $value)
-        {
-            if (! is_array($value))
-            {
-                $flat[] = $value;
-
-                continue;
-            }
-
-            foreach ($value as $v)
-            {
-                $flat[] = $v;
-            }
-        }
-
-        $stmt->execute($flat);
+        $stmt->execute($query->getValues());
 
         return $stmt;
     }

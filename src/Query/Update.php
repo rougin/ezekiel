@@ -3,13 +3,14 @@
 namespace Rougin\Ezekiel\Query;
 
 use Rougin\Ezekiel\Query;
+use Rougin\Ezekiel\ValueInterface;
 
 /**
  * @package Ezekiel
  *
  * @author Rougin Gutib <rougingutib@gmail.com>
  */
-class Update
+class Update implements ValueInterface
 {
     /**
      * @var \Rougin\Ezekiel\Query

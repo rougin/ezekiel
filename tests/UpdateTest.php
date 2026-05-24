@@ -12,6 +12,25 @@ class UpdateTest extends Testcase
     /**
      * @return void
      */
+    public function test_passed_if_update_returns_values()
+    {
+        $expect = array('Royce', 30, 1);
+
+        $query = new Query;
+
+        $query->update('users')
+            ->set('name', 'Royce')
+            ->set('age', 30)
+            ->where('id')->equals(1);
+
+        $actual = $query->getValues();
+
+        $this->assertEquals($expect, $actual);
+    }
+
+    /**
+     * @return void
+     */
     public function test_passed_if_update_uses_set()
     {
         $sql = 'UPDATE `users` SET `name` = ?, `age` = ? WHERE `id` = ?';

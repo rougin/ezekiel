@@ -275,6 +275,47 @@ class Query
     }
 
     /**
+     * @return mixed[]
+     */
+    public function getValues()
+    {
+        $flat = array();
+
+        if ($this->type === self::TYPE_UPDATE)
+        {
+            foreach ($this->update->getValues() as $value)
+            {
+                $flat[] = $value;
+            }
+        }
+
+        foreach ($this->items as $item)
+        {
+            if (! $item instanceof ValueInterface)
+            {
+                continue;
+            }
+
+            foreach ($item->getValues() as $value)
+            {
+                if (! is_array($value))
+                {
+                    $flat[] = $value;
+
+                    continue;
+                }
+
+                foreach ($value as $v)
+                {
+                    $flat[] = $v;
+                }
+            }
+        }
+
+        return $flat;
+    }
+
+    /**
      * Generates a "GROUP BY" query.
      *
      * @param string|string[] $fields
