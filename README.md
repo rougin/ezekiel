@@ -406,6 +406,9 @@ $sql = $table->toSql();
 | `timestamp(name)` | `TIMESTAMP` | |
 | `increments(name)` | `INT AUTO_INCREMENT` | Also sets `NOT NULL PRIMARY KEY` |
 
+> [!NOTE]
+> SQL shown is for MySQL (the default dialect). Types are translated per dialect: e.g., `boolean()` becomes `BOOLEAN` in PostgreSQL, `BIT` in MSSQL, `INTEGER` in SQLite; `increments()` becomes `SERIAL` in PostgreSQL, `IDENTITY(1,1)` in MSSQL, `INTEGER AUTOINCREMENT` in SQLite.
+
 ### Column modifiers
 
 | Modifier | SQL |
@@ -493,24 +496,27 @@ use Rougin\Ezekiel\Dialect\AbstractDialect;
 
 class OracleDialect extends AbstractDialect
 {
+    public function getName()
+    {
+        return 'oracle';
+    }
+
     public function getOpenQuoteChar()
     {
         return '"';
     }
 
-    public function limitClause($limit, $offset)
+    public function toLimit($limit, $offset)
     {
         return '';
-    }
-
-    public function name()
-    {
-        return 'oracle';
     }
 }
 ```
 
-Available built-in dialects for `Ezekiel` include `MysqlDialect`, `PgsqlDialect`, `SqliteDialect`, and `MssqlDialect`.
+Custom dialects can also override `toColumn`, `toAlterTable`, `toCreateTable`, `toDropTable`, and `toDropTableIfExists` for generating platform-specific DDL statements (e.g., type translation, `ADD` vs `ADD COLUMN`, `AUTO_INCREMENT` vs `IDENTITY(1,1)`).
+
+> [!NOTE]
+> Available built-in dialects for `Ezekiel` include `MysqlDialect`, `PgsqlDialect`, `SqliteDialect`, and `MssqlDialect`.
 
 ## Renaming from `Windstorm`
 

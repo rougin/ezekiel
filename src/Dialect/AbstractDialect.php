@@ -3,6 +3,7 @@
 namespace Rougin\Ezekiel\Dialect;
 
 use Rougin\Ezekiel\DialectInterface;
+use Rougin\Ezekiel\Schema\Column;
 
 /**
  * @package Ezekiel
@@ -111,6 +112,129 @@ abstract class AbstractDialect implements DialectInterface
         }
 
         return $open . $name . $close;
+    }
+
+    /**
+     * @param string $table
+     * @param string $columns
+     *
+     * @return string
+     */
+    public function toAlterTable($table, $columns)
+    {
+        $table = $this->quote($table);
+
+        $sql = 'ALTER TABLE ' . $table;
+
+        if ($columns !== '')
+        {
+            $lines = explode(', ', $columns);
+
+            $items = array();
+
+            foreach ($lines as $line)
+            {
+                $items[] = 'ADD ' . $line;
+            }
+
+            $sql .= ' ' . implode(', ', $items);
+        }
+
+        return $sql;
+    }
+
+    /**
+     * @param Column $column
+     *
+     * @return string
+     */
+    public function toColumn(Column $column)
+    {
+        $sql = $this->quote($column->getName());
+
+        $sql .= ' ' . $column->getType();
+
+        $length = $column->getLength();
+
+        if ($length !== null)
+        {
+            $sql .= '(' . $length . ')';
+        }
+
+        if (! $column->isNullable())
+        {
+            $sql .= ' NOT NULL';
+        }
+
+        if ($column->hasDefault())
+        {
+            $default = $column->getDefault();
+
+            if (is_bool($default))
+            {
+                $sql .= ' DEFAULT ' . (int) $default;
+            }
+
+            if (is_int($default) || is_float($default))
+            {
+                $sql .= ' DEFAULT ' . $default;
+            }
+
+            if (is_string($default))
+            {
+                $sql .= ' DEFAULT \'' . $default . '\'';
+            }
+        }
+
+        if ($column->isAutoIncrement())
+        {
+            $sql .= ' AUTO_INCREMENT';
+        }
+
+        if ($column->isUnique())
+        {
+            $sql .= ' UNIQUE';
+        }
+
+        if ($column->isPrimary())
+        {
+            $sql .= ' PRIMARY KEY';
+        }
+
+        return $sql;
+    }
+
+    /**
+     * @param string $table
+     * @param string $columns
+     *
+     * @return string
+     */
+    public function toCreateTable($table, $columns)
+    {
+        $table = $this->quote($table);
+
+        return 'CREATE TABLE ' . $table . ' (' . $columns . ')';
+    }
+
+    /**
+     * @param string $table
+     *
+     * @return string
+     */
+    public function toDropTable($table)
+    {
+        return 'DROP TABLE ' . $this->quote($table);
+    }
+
+    /**
+     * @param string $table
+     *
+     * @return string
+     */
+    public function toDropTableIfExists($table)
+    {
+        return 'DROP TABLE IF EXISTS ' . $this->quote($table);
     }
 
     /**

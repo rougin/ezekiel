@@ -2,7 +2,9 @@
 
 namespace Rougin\Ezekiel;
 
+use Rougin\Ezekiel\Dialect\MssqlDialect;
 use Rougin\Ezekiel\Dialect\PgsqlDialect;
+use Rougin\Ezekiel\Dialect\SqliteDialect;
 use Rougin\Ezekiel\Schema\Design;
 use Rougin\Ezekiel\Schema\Table;
 
@@ -335,7 +337,7 @@ class TableTest extends Testcase
      */
     public function test_passed_if_table_uses_pgsql_dialect()
     {
-        $sql = 'CREATE TABLE "users" ("id" INT NOT NULL AUTO_INCREMENT PRIMARY KEY, ';
+        $sql = 'CREATE TABLE "users" ("id" SERIAL NOT NULL PRIMARY KEY, ';
         $sql .= '"name" VARCHAR(100) NOT NULL)';
 
         $table = new Table(new PgsqlDialect);
@@ -343,6 +345,119 @@ class TableTest extends Testcase
         $table->create('users', function (Design $d)
         {
             $d->increments('id');
+
+            $d->string('name', 100);
+        });
+
+        $actual = $table->toSql();
+
+        $this->assertEquals($sql, $actual);
+    }
+
+    /**
+     * @return void
+     */
+    public function test_passed_if_pgsql_alters_add_column()
+    {
+        $expect = 'ALTER TABLE "users" ADD COLUMN "bio" TEXT NOT NULL';
+
+        $table = new Table(new PgsqlDialect);
+
+        $table->table('users', function (Design $d)
+        {
+            $d->text('bio');
+        });
+
+        $actual = $table->toSql();
+
+        $this->assertEquals($expect, $actual);
+    }
+
+    /**
+     * @return void
+     */
+    public function test_passed_if_pgsql_uses_boolean_type()
+    {
+        $sql = 'CREATE TABLE "users" (';
+        $sql .= '"id" SERIAL NOT NULL PRIMARY KEY, ';
+        $sql .= '"is_admin" BOOLEAN NOT NULL DEFAULT TRUE';
+        $sql .= ')';
+
+        $table = new Table(new PgsqlDialect);
+
+        $table->create('users', function (Design $d)
+        {
+            $d->increments('id');
+
+            $d->boolean('is_admin')->defaultValue(true);
+        });
+
+        $actual = $table->toSql();
+
+        $this->assertEquals($sql, $actual);
+    }
+
+    /**
+     * @return void
+     */
+    public function test_passed_if_sqlite_alters_add_column()
+    {
+        $expect = 'ALTER TABLE "users" ADD COLUMN "bio" TEXT NOT NULL';
+
+        $table = new Table(new SqliteDialect);
+
+        $table->table('users', function (Design $d)
+        {
+            $d->text('bio');
+        });
+
+        $actual = $table->toSql();
+
+        $this->assertEquals($expect, $actual);
+    }
+
+    /**
+     * @return void
+     */
+    public function test_passed_if_table_uses_mssql_dialect()
+    {
+        $sql = 'CREATE TABLE [users] (';
+        $sql .= '[id] INT IDENTITY(1,1) NOT NULL PRIMARY KEY, ';
+        $sql .= '[is_active] BIT NOT NULL';
+        $sql .= ')';
+
+        $table = new Table(new MssqlDialect);
+
+        $table->create('users', function (Design $d)
+        {
+            $d->increments('id');
+
+            $d->boolean('is_active');
+        });
+
+        $actual = $table->toSql();
+
+        $this->assertEquals($sql, $actual);
+    }
+
+    /**
+     * @return void
+     */
+    public function test_passed_if_table_uses_sqlite_dialect()
+    {
+        $sql = 'CREATE TABLE "users" (';
+        $sql .= '"id" INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT, ';
+        $sql .= '"is_active" INTEGER NOT NULL, ';
+        $sql .= '"name" VARCHAR(100) NOT NULL';
+        $sql .= ')';
+
+        $table = new Table(new SqliteDialect);
+
+        $table->create('users', function (Design $d)
+        {
+            $d->increments('id');
+
+            $d->boolean('is_active');
 
             $d->string('name', 100);
         });

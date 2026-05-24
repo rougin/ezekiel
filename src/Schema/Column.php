@@ -95,6 +95,78 @@ class Column
     }
 
     /**
+     * @return mixed|null
+     */
+    public function getDefault()
+    {
+        return $this->default;
+    }
+
+    /**
+     * @return integer|string|null
+     */
+    public function getLength()
+    {
+        return $this->length;
+    }
+
+    /**
+     * @return string
+     */
+    public function getName()
+    {
+        return $this->name;
+    }
+
+    /**
+     * @return string
+     */
+    public function getType()
+    {
+        return $this->type;
+    }
+
+    /**
+     * @return boolean
+     */
+    public function hasDefault()
+    {
+        return $this->hasDefault;
+    }
+
+    /**
+     * @return boolean
+     */
+    public function isAutoIncrement()
+    {
+        return $this->autoIncrement;
+    }
+
+    /**
+     * @return boolean
+     */
+    public function isNullable()
+    {
+        return $this->nullable;
+    }
+
+    /**
+     * @return boolean
+     */
+    public function isPrimary()
+    {
+        return $this->primary;
+    }
+
+    /**
+     * @return boolean
+     */
+    public function isUnique()
+    {
+        return $this->unique;
+    }
+
+    /**
      * @param boolean $value
      *
      * @return self
@@ -117,6 +189,16 @@ class Column
     }
 
     /**
+     * @param \Rougin\Ezekiel\DialectInterface $dialect
+     *
+     * @return string
+     */
+    public function toSql(DialectInterface $dialect)
+    {
+        return $dialect->toColumn($this);
+    }
+
+    /**
      * @return self
      */
     public function unique()
@@ -124,62 +206,5 @@ class Column
         $this->unique = true;
 
         return $this;
-    }
-
-    /**
-     * @param \Rougin\Ezekiel\DialectInterface $dialect
-     *
-     * @return string
-     */
-    public function compile(DialectInterface $dialect)
-    {
-        $sql = $dialect->quote($this->name);
-
-        $sql .= ' ' . $this->type;
-
-        if ($this->length !== null)
-        {
-            $sql .= '(' . $this->length . ')';
-        }
-
-        if (! $this->nullable)
-        {
-            $sql .= ' NOT NULL';
-        }
-
-        if ($this->hasDefault)
-        {
-            if (is_bool($this->default))
-            {
-                $sql .= ' DEFAULT ' . (int) $this->default;
-            }
-
-            if (is_int($this->default) || is_float($this->default))
-            {
-                $sql .= ' DEFAULT ' . $this->default;
-            }
-
-            if (is_string($this->default))
-            {
-                $sql .= ' DEFAULT \'' . $this->default . '\'';
-            }
-        }
-
-        if ($this->autoIncrement)
-        {
-            $sql .= ' AUTO_INCREMENT';
-        }
-
-        if ($this->unique)
-        {
-            $sql .= ' UNIQUE';
-        }
-
-        if ($this->primary)
-        {
-            $sql .= ' PRIMARY KEY';
-        }
-
-        return $sql;
     }
 }

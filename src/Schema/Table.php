@@ -127,68 +127,28 @@ class Table
      */
     public function toSql()
     {
-        $table = $this->dialect->quote($this->table);
-
         if ($this->type === self::TYPE_DROP)
         {
-            return 'DROP TABLE ' . $table;
+            return $this->dialect->toDropTable($this->table);
         }
 
         if ($this->type === self::TYPE_DROP_IF_EXISTS)
         {
-            return 'DROP TABLE IF EXISTS ' . $table;
+            return $this->dialect->toDropTableIfExists($this->table);
         }
 
-        if ($this->type === self::TYPE_TABLE)
-        {
-            return $this->compileAlter($table);
-        }
-
-        return $this->compileCreate($table);
-    }
-
-    /**
-     * @param string $table
-     *
-     * @return string
-     */
-    protected function compileAlter($table)
-    {
-        $sql = 'ALTER TABLE ' . $table;
+        $columns = '';
 
         if ($this->design)
         {
             $columns = $this->design->compile($this->dialect);
-
-            $lines = explode(', ', $columns);
-
-            $items = array();
-
-            foreach ($lines as $line)
-            {
-                $items[] = 'ADD ' . $line;
-            }
-
-            $sql .= ' ' . implode(', ', $items);
         }
 
-        return $sql;
-    }
-
-    /**
-     * @param string $table
-     *
-     * @return string
-     */
-    protected function compileCreate($table)
-    {
-        $sql = 'CREATE TABLE ' . $table . ' (';
-
-        if ($this->design)
+        if ($this->type === self::TYPE_TABLE)
         {
-            $sql .= $this->design->compile($this->dialect);
+            return $this->dialect->toAlterTable($this->table, $columns);
         }
 
-        return $sql . ')';
+        return $this->dialect->toCreateTable($this->table, $columns);
     }
 }

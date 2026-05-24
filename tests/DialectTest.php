@@ -7,6 +7,7 @@ use Rougin\Ezekiel\Dialect\MysqlDialect;
 use Rougin\Ezekiel\Dialect\PgsqlDialect;
 use Rougin\Ezekiel\Dialect\SqliteDialect;
 use Rougin\Ezekiel\Fixture\PdoStub;
+use Rougin\Ezekiel\Schema\Column;
 
 /**
  * @package Ezekiel
@@ -850,6 +851,210 @@ class DialectTest extends Testcase
         $expect = '"table"';
 
         $actual = $dialect->quote('"table"');
+
+        $this->assertEquals($expect, $actual);
+    }
+
+    /**
+     * @return void
+     */
+    public function test_passed_if_mssql_column_uses_identity()
+    {
+        $dialect = new MssqlDialect;
+
+        $column = new Column('id', 'INT');
+
+        $column->autoIncrement();
+
+        $expect = '[id] INT IDENTITY(1,1) NOT NULL';
+
+        $actual = $dialect->toColumn($column);
+
+        $this->assertEquals($expect, $actual);
+    }
+
+    /**
+     * @return void
+     */
+    public function test_passed_if_mssql_maps_boolean_to_bit()
+    {
+        $dialect = new MssqlDialect;
+
+        $column = new Column('is_active', 'TINYINT', 1);
+
+        $expect = '[is_active] BIT NOT NULL';
+
+        $actual = $dialect->toColumn($column);
+
+        $this->assertEquals($expect, $actual);
+    }
+
+    /**
+     * @return void
+     */
+    public function test_passed_if_mssql_maps_tinyint_to_smallint()
+    {
+        $dialect = new MssqlDialect;
+
+        $column = new Column('count', 'TINYINT');
+
+        $expect = '[count] SMALLINT NOT NULL';
+
+        $actual = $dialect->toColumn($column);
+
+        $this->assertEquals($expect, $actual);
+    }
+
+    /**
+     * @return void
+     */
+    public function test_passed_if_mysql_column_uses_autoincrement()
+    {
+        $dialect = new MysqlDialect;
+
+        $column = new Column('id', 'INT');
+
+        $column->autoIncrement();
+
+        $expect = '`id` INT NOT NULL AUTO_INCREMENT';
+
+        $actual = $dialect->toColumn($column);
+
+        $this->assertEquals($expect, $actual);
+    }
+
+    /**
+     * @return void
+     */
+    public function test_passed_if_pgsql_column_uses_serial()
+    {
+        $dialect = new PgsqlDialect;
+
+        $column = new Column('id', 'INT');
+
+        $column->autoIncrement();
+
+        $expect = '"id" SERIAL NOT NULL';
+
+        $actual = $dialect->toColumn($column);
+
+        $this->assertEquals($expect, $actual);
+    }
+
+    /**
+     * @return void
+     */
+    public function test_passed_if_pgsql_maps_boolean_to_boolean()
+    {
+        $dialect = new PgsqlDialect;
+
+        $column = new Column('is_active', 'TINYINT', 1);
+
+        $expect = '"is_active" BOOLEAN NOT NULL';
+
+        $actual = $dialect->toColumn($column);
+
+        $this->assertEquals($expect, $actual);
+    }
+
+    /**
+     * @return void
+     */
+    public function test_passed_if_pgsql_maps_datetime_to_timestamp()
+    {
+        $dialect = new PgsqlDialect;
+
+        $column = new Column('created', 'DATETIME');
+
+        $expect = '"created" TIMESTAMP NOT NULL';
+
+        $actual = $dialect->toColumn($column);
+
+        $this->assertEquals($expect, $actual);
+    }
+
+    /**
+     * @return void
+     */
+    public function test_passed_if_pgsql_maps_tinyint_to_smallint()
+    {
+        $dialect = new PgsqlDialect;
+
+        $column = new Column('count', 'TINYINT');
+
+        $expect = '"count" SMALLINT NOT NULL';
+
+        $actual = $dialect->toColumn($column);
+
+        $this->assertEquals($expect, $actual);
+    }
+
+    /**
+     * @return void
+     */
+    public function test_passed_if_sqlite_column_uses_autoincrement()
+    {
+        $dialect = new SqliteDialect;
+
+        $column = new Column('id', 'INT');
+
+        $column->autoIncrement();
+
+        $expect = '"id" INTEGER NOT NULL AUTOINCREMENT';
+
+        $actual = $dialect->toColumn($column);
+
+        $this->assertEquals($expect, $actual);
+    }
+
+    /**
+     * @return void
+     */
+    public function test_passed_if_sqlite_maps_datetime_to_text()
+    {
+        $dialect = new SqliteDialect;
+
+        $column = new Column('created', 'DATETIME');
+
+        $expect = '"created" TEXT NOT NULL';
+
+        $actual = $dialect->toColumn($column);
+
+        $this->assertEquals($expect, $actual);
+    }
+
+    /**
+     * @return void
+     */
+    public function test_passed_if_sqlite_maps_tinyint_to_integer()
+    {
+        $dialect = new SqliteDialect;
+
+        $column = new Column('count', 'TINYINT');
+
+        $expect = '"count" INTEGER NOT NULL';
+
+        $actual = $dialect->toColumn($column);
+
+        $this->assertEquals($expect, $actual);
+    }
+
+    /**
+     * @return void
+     */
+    public function test_passed_if_sqlite_primary_before_autoincr()
+    {
+        $dialect = new SqliteDialect;
+
+        $column = new Column('id', 'INT');
+
+        $column->autoIncrement();
+
+        $column->primary();
+
+        $expect = '"id" INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT';
+
+        $actual = $dialect->toColumn($column);
 
         $this->assertEquals($expect, $actual);
     }

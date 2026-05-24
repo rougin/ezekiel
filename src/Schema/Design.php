@@ -204,7 +204,7 @@ class Design
 
         foreach ($this->columns as $column)
         {
-            $lines[] = $column->compile($dialect);
+            $lines[] = $column->toSql($dialect);
         }
 
         foreach ($this->indexes as $index)
