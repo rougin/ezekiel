@@ -53,9 +53,16 @@ class MssqlDialect extends AbstractDialect
             $length = null;
         }
 
-        if ($type === 'TINYINT')
+        if ($type === 'TINYINT' && $length !== 1)
         {
             $type = 'SMALLINT';
+        }
+
+        if ($type === 'TINYINT' && $length === 1)
+        {
+            $type = 'BIT';
+
+            $length = null;
         }
 
         $sql = $this->quote($column->getName());
