@@ -65,6 +65,7 @@ class ModelTest extends Testcase
     {
         $user = new User;
 
+        /** @phpstan-ignore-next-line */
         $user->active = '1';
 
         $this->assertSame(true, $user->active);
@@ -79,6 +80,7 @@ class ModelTest extends Testcase
 
         $model->id = 1;
 
+        /** @phpstan-ignore-next-line */
         $model->score = '95.5';
 
         $this->assertSame(95.5, $model->score);
@@ -121,6 +123,7 @@ class ModelTest extends Testcase
 
         $model->id = 1;
 
+        /** @phpstan-ignore-next-line */
         $model->notes = 123;
 
         $this->assertSame('123', $model->notes);
@@ -182,12 +185,13 @@ class ModelTest extends Testcase
 
         $triggered = false;
 
-        set_error_handler(function () use (&$triggered)
+        set_error_handler(function ($errno, $errstr, $errfile, $errline) use (&$triggered)
         {
             $triggered = true;
+
+            return true;
         });
 
-        /** @phpstan-ignore-next-line */
         $model->delete();
 
         restore_error_handler();
@@ -348,6 +352,8 @@ class ModelTest extends Testcase
 
         $found = $query->find($user->id);
 
+        $this->assertNotNull($found);
+
         $this->assertEquals('FindMe', $found->name);
     }
 
@@ -385,6 +391,8 @@ class ModelTest extends Testcase
         $query = new User;
 
         $found = $query->first();
+
+        $this->assertNotNull($found);
 
         $this->assertEquals('FirstModel', $found->name);
     }
@@ -557,6 +565,8 @@ class ModelTest extends Testcase
 
         $row = $stmt->fetch(\PDO::FETCH_ASSOC);
 
+        $this->assertTrue(is_array($row));
+
         $this->assertNotNull($row['deleted_at']);
     }
 
@@ -579,7 +589,6 @@ class ModelTest extends Testcase
     {
         $model = new User;
 
-        /** @phpstan-ignore-next-line */
         $actual = $model->exists;
 
         $this->assertFalse($actual);

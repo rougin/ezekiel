@@ -5,6 +5,10 @@ namespace Rougin\Ezekiel\Active\Fixture;
 use Rougin\Ezekiel\Active\Model;
 
 /**
+ * @property integer                               $id
+ * @property string                                $name
+ * @property \Rougin\Ezekiel\Active\Fixture\Post[] $posts
+ *
  * @package Ezekiel
  *
  * @author Rougin Gutib <rougingutib@gmail.com>
@@ -12,7 +16,7 @@ use Rougin\Ezekiel\Active\Model;
 class Tag extends Model
 {
     /**
-     * @var string[]
+     * @var array<integer, string>
      */
     protected $fillable = array('id', 'name');
 

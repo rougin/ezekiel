@@ -80,9 +80,11 @@ class BelongsToMany
         // Return related key from the related model ---
         $default = $instance->getForeignKey();
 
-        $this->related = $related;
-
-        if (! $related)
+        if ($related)
+        {
+            $this->related = $related;
+        }
+        else
         {
             $this->related = $default;
         }

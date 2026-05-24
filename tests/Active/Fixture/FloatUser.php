@@ -5,6 +5,9 @@ namespace Rougin\Ezekiel\Active\Fixture;
 use Rougin\Ezekiel\Active\Model;
 
 /**
+ * @property integer    $id
+ * @property float|null $score
+ *
  * @package Ezekiel
  *
  * @author Rougin Gutib <rougingutib@gmail.com>
@@ -17,7 +20,7 @@ class FloatUser extends Model
     protected $casts = array('score' => 'float');
 
     /**
-     * @var string[]
+     * @var array<integer, string>
      */
     protected $fillable = array('id', 'score');
 }

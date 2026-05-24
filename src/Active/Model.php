@@ -651,6 +651,7 @@ class Model
 
         if ($type === 'integer' || $type === 'int')
         {
+            /** @phpstan-ignore-next-line */
             return (int) $value;
         }
 
@@ -661,11 +662,13 @@ class Model
 
         if ($type === 'float' || $type === 'double')
         {
+            /** @phpstan-ignore-next-line */
             return (float) $value;
         }
 
         if ($type === 'string')
         {
+            /** @phpstan-ignore-next-line */
             return (string) $value;
         }
 

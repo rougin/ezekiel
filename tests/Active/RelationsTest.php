@@ -61,6 +61,7 @@ class RelationsTest extends Testcase
 
         $tags = $post->tags;
 
+        /** @phpstan-ignore-next-line */
         $this->assertTrue(is_array($tags));
     }
 
@@ -318,8 +319,6 @@ class RelationsTest extends Testcase
 
         $posts = $user->posts;
 
-        $this->assertTrue(is_array($posts));
-
         $this->assertCount(0, $posts);
     }
 
@@ -335,8 +334,6 @@ class RelationsTest extends Testcase
         $this->createPost($user->id, 'Post 2');
 
         $posts = $user->posts;
-
-        $this->assertTrue(is_array($posts));
 
         $this->assertCount(2, $posts);
     }
@@ -385,8 +382,6 @@ class RelationsTest extends Testcase
         $post->tags()->attach($tag->id, array('extra' => 'framework'));
 
         $tags = $post->tags;
-
-        $this->assertTrue(is_array($tags));
 
         $this->assertCount(1, $tags);
 
@@ -470,8 +465,6 @@ class RelationsTest extends Testcase
 
         $posts = $tag->posts;
 
-        $this->assertTrue(is_array($posts));
-
         $this->assertCount(0, $posts);
     }
 
@@ -501,8 +494,6 @@ class RelationsTest extends Testcase
         $post->tags()->attach($tag->id);
 
         $posts = $tag->posts;
-
-        $this->assertTrue(is_array($posts));
 
         $this->assertCount(1, $posts);
 
@@ -542,8 +533,8 @@ class RelationsTest extends Testcase
     }
 
     /**
-     * @param mixed  $userId
-     * @param string $title
+     * @param integer $userId
+     * @param string  $title
      *
      * @return \Rougin\Ezekiel\Active\Fixture\Post
      */
@@ -561,8 +552,8 @@ class RelationsTest extends Testcase
     }
 
     /**
-     * @param mixed  $userId
-     * @param string $bio
+     * @param integer $userId
+     * @param string  $bio
      *
      * @return \Rougin\Ezekiel\Active\Fixture\Profile
      */

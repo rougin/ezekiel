@@ -24,7 +24,6 @@ class Testcase extends Legacy
         /** @phpstan-ignore-next-line */
         if (method_exists($this, 'assertStringContainsString'))
         {
-            /** @phpstan-ignore-next-line */
             $this->assertStringContainsString($needle, $haystack);
 
             return;

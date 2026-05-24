@@ -5,6 +5,11 @@ namespace Rougin\Ezekiel\Active\Fixture;
 use Rougin\Ezekiel\Active\Model;
 
 /**
+ * @property integer                                  $id
+ * @property integer                                  $user_id
+ * @property string                                   $bio
+ * @property \Rougin\Ezekiel\Active\Fixture\User|null $user
+ *
  * @package Ezekiel
  *
  * @author Rougin Gutib <rougingutib@gmail.com>
@@ -12,7 +17,7 @@ use Rougin\Ezekiel\Active\Model;
 class Profile extends Model
 {
     /**
-     * @var string[]
+     * @var array<integer, string>
      */
     protected $fillable = array('id', 'user_id', 'bio');
 
