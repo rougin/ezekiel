@@ -53,7 +53,7 @@ class MssqlDialect extends AbstractDialect
             $length = null;
         }
 
-        if ($type === 'TINYINT')
+        if ($type === 'TINYINT' && $length !== 1)
         {
             $type = 'SMALLINT';
         }

@@ -67,14 +67,14 @@ class PgsqlDialect extends AbstractDialect
 
         $length = $column->getLength();
 
-        if ($type === 'TINYINT')
-        {
-            $type = 'SMALLINT';
-        }
-
         if ($type === 'DATETIME')
         {
             $type = 'TIMESTAMP';
+        }
+
+        if ($type === 'TINYINT' && $length !== 1)
+        {
+            $type = 'SMALLINT';
         }
 
         if ($type === 'TINYINT' && $length === 1)
