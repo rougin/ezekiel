@@ -399,6 +399,120 @@ class RelationsTest extends Testcase
     /**
      * @return void
      */
+    public function test_passed_if_profile_belongs_to_instance()
+    {
+        $expect = 'Rougin\Ezekiel\Active\Relations\BelongsTo';
+
+        $profile = new Profile;
+
+        $result = $profile->user();
+
+        $this->assertInstanceOf($expect, $result);
+    }
+
+    /**
+     * @return void
+     */
+    public function test_passed_if_profile_belongs_to_null()
+    {
+        $this->createUser('John');
+
+        $profile = new Profile;
+
+        $profile->user_id = 999;
+
+        $profile->bio = 'No Parent';
+
+        $found = $profile->user;
+
+        $this->assertNull($found);
+    }
+
+    /**
+     * @return void
+     */
+    public function test_passed_if_profile_belongs_to_null_new()
+    {
+        $profile = new Profile;
+
+        $user = $profile->user;
+
+        $this->assertNull($user);
+    }
+
+    /**
+     * @return void
+     */
+    public function test_passed_if_profile_belongs_to_user()
+    {
+        $user = $this->createUser('John');
+
+        $profile = $this->createProfile($user->id, 'My bio');
+
+        $expect = 'Rougin\Ezekiel\Active\Fixture\User';
+
+        $found = $profile->user;
+
+        $this->assertInstanceOf($expect, $found);
+
+        $this->assertEquals($user->id, $found->id);
+    }
+
+    /**
+     * @return void
+     */
+    public function test_passed_if_tag_posts_empty()
+    {
+        $tag = $this->createTag('TagOnly');
+
+        $posts = $tag->posts;
+
+        $this->assertTrue(is_array($posts));
+
+        $this->assertCount(0, $posts);
+    }
+
+    /**
+     * @return void
+     */
+    public function test_passed_if_tag_posts_instance()
+    {
+        $expect = 'Rougin\Ezekiel\Active\Relations\BelongsToMany';
+
+        $tag = $this->createTag('Instance');
+
+        $this->assertInstanceOf($expect, $tag->posts());
+    }
+
+    /**
+     * @return void
+     */
+    public function test_passed_if_tag_posts_works()
+    {
+        $user = $this->createUser('John');
+
+        $tag = $this->createTag('Tech');
+
+        $post = $this->createPost($user->id, 'Article');
+
+        $post->tags()->attach($tag->id);
+
+        $posts = $tag->posts;
+
+        $this->assertTrue(is_array($posts));
+
+        $this->assertCount(1, $posts);
+
+        $expect = 'Rougin\Ezekiel\Active\Fixture\Post';
+
+        $this->assertInstanceOf($expect, $posts[0]);
+
+        $this->assertEquals($post->id, $posts[0]->id);
+    }
+
+    /**
+     * @return void
+     */
     public function test_passed_if_with_pivot_includes()
     {
         $expect = 'Rougin\Ezekiel\Active\Relations\BelongsToMany';
