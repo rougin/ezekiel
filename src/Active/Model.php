@@ -494,17 +494,36 @@ class Model
     }
 
     /**
+     * @param string       $column
+     * @param mixed|string $value
+     *
+     * @return static
+     */
+    public function orWhere($column, $value)
+    {
+        $builder = $this->getBuilder();
+
+        if (func_num_args() > 2)
+        {
+            $builder->orWhere($column, $value, func_get_arg(2));
+        }
+        else
+        {
+            $builder->orWhere($column, $value);
+        }
+
+        return $this;
+    }
+
+    /**
      * @param string $column
-     * @param string $operator
      * @param mixed  $value
      *
      * @return static
      */
-    public function orWhere($column, $operator, $value)
+    public function orWhereLike($column, $value)
     {
-        $builder = $this->getBuilder();
-
-        $builder->orWhere($column, $operator, $value);
+        $this->getBuilder()->orWhereLike($column, $value);
 
         return $this;
     }
@@ -587,14 +606,23 @@ class Model
     }
 
     /**
-     * @param string $column
-     * @param mixed  $value
+     * @param string       $column
+     * @param mixed|string $value
      *
      * @return static
      */
     public function where($column, $value)
     {
-        $this->getBuilder()->where($column, $value);
+        $builder = $this->getBuilder();
+
+        if (func_num_args() > 2)
+        {
+            $builder->where($column, $value, func_get_arg(2));
+        }
+        else
+        {
+            $builder->where($column, $value);
+        }
 
         return $this;
     }
@@ -608,6 +636,19 @@ class Model
     public function whereIn($column, $values)
     {
         $this->getBuilder()->whereIn($column, $values);
+
+        return $this;
+    }
+
+    /**
+     * @param string $column
+     * @param mixed  $value
+     *
+     * @return static
+     */
+    public function whereLike($column, $value)
+    {
+        $this->getBuilder()->whereLike($column, $value);
 
         return $this;
     }

@@ -288,6 +288,62 @@ class ModelTest extends Testcase
     /**
      * @return void
      */
+    public function test_passed_if_filter_uses_or_where_like()
+    {
+        $this->createUser('OrLikeTest');
+
+        $query = new User;
+
+        $found = $query->where('name', '')->orWhereLike('name', '%OrLike%')->firstOrFail();
+
+        $this->assertEquals('OrLikeTest', $found->name);
+    }
+
+    /**
+     * @return void
+     */
+    public function test_passed_if_filter_uses_where_like()
+    {
+        $this->createUser('WhereLikeTest');
+
+        $query = new User;
+
+        $found = $query->whereLike('name', '%WhereLike%')->firstOrFail();
+
+        $this->assertEquals('WhereLikeTest', $found->name);
+    }
+
+    /**
+     * @return void
+     */
+    public function test_passed_if_or_where_uses_default()
+    {
+        $this->createUser('OrDefault');
+
+        $query = new User;
+
+        $found = $query->where('id', 0)->orWhere('name', 'OrDefault')->firstOrFail();
+
+        $this->assertEquals('OrDefault', $found->name);
+    }
+
+    /**
+     * @return void
+     */
+    public function test_passed_if_where_uses_operator()
+    {
+        $this->createUser('WhereOp');
+
+        $query = new User;
+
+        $found = $query->where('id', '>', 0)->firstOrFail();
+
+        $this->assertEquals('WhereOp', $found->name);
+    }
+
+    /**
+     * @return void
+     */
     public function test_passed_if_filter_uses_lte()
     {
         $user = $this->createUser('LTETest');

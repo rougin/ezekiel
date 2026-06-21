@@ -89,11 +89,8 @@ class Builder
             /** @var string */
             $col = $where['column'];
 
-            // [TODO] Improve logic ------------------------------------------
-            $exists = isset($where['comparison']);
-
-            $comparison = $exists ? $where['comparison'] : $where['operator'];
-            // ---------------------------------------------------------------
+            /** @var string */
+            $comparison = $where['comparison'];
 
             /** @var mixed */
             $value = $where['value'];
@@ -183,18 +180,45 @@ class Builder
     }
 
     /**
+     * @param string       $column
+     * @param mixed|string $value
+     *
+     * @return self
+     */
+    public function orWhere($column, $value)
+    {
+        $item = array('type' => 'OR', 'column' => $column);
+
+        if (func_num_args() > 2)
+        {
+            $item['comparison'] = $value;
+
+            $item['value'] = func_get_arg(2);
+        }
+        else
+        {
+            $item['comparison'] = '=';
+
+            $item['value'] = $value;
+        }
+
+        $this->wheres[] = $item;
+
+        return $this;
+    }
+
+    /**
      * @param string $column
-     * @param string $operator
      * @param mixed  $value
      *
      * @return self
      */
-    public function orWhere($column, $operator, $value)
+    public function orWhereLike($column, $value)
     {
         $this->wheres[] = array(
             'type' => 'OR',
             'column' => $column,
-            'operator' => $operator,
+            'comparison' => 'like',
             'value' => $value
         );
 
@@ -270,20 +294,27 @@ class Builder
     }
 
     /**
-     * @param string $column
-     * @param mixed  $value
+     * @param string       $column
+     * @param mixed|string $value
      *
      * @return self
      */
     public function where($column, $value)
     {
-        $item = array('type' => 'AND');
+        $item = array('type' => 'AND', 'column' => $column);
 
-        $item['column'] = $column;
+        if (func_num_args() > 2)
+        {
+            $item['comparison'] = $value;
 
-        $item['operator'] = '=';
+            $item['value'] = func_get_arg(2);
+        }
+        else
+        {
+            $item['comparison'] = '=';
 
-        $item['value'] = $value;
+            $item['value'] = $value;
+        }
 
         $this->wheres[] = $item;
 
@@ -298,17 +329,30 @@ class Builder
      */
     public function whereIn($column, $values)
     {
-        $item = array('type' => 'AND');
+        $this->wheres[] = array(
+            'type' => 'AND',
+            'column' => $column,
+            'comparison' => 'in',
+            'value' => $values
+        );
 
-        $item['column'] = $column;
+        return $this;
+    }
 
-        $item['operator'] = '=';
-
-        $item['comparison'] = 'in';
-
-        $item['value'] = $values;
-
-        $this->wheres[] = $item;
+    /**
+     * @param string $column
+     * @param mixed  $value
+     *
+     * @return self
+     */
+    public function whereLike($column, $value)
+    {
+        $this->wheres[] = array(
+            'type' => 'AND',
+            'column' => $column,
+            'comparison' => 'like',
+            'value' => $value
+        );
 
         return $this;
     }

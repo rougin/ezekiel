@@ -267,9 +267,11 @@ The `Builder` class wraps Ezekiel's `Query` and provides an Eloquent-compatible 
 
 | Method | Description |
 |---|---|
-| `where($column, $operator, $value)` | Basic where clause |
-| `orWhere($column, $operator, $value)` | OR where clause |
+| `where($column, $value)` | Basic where clause (`$operator` optional as second argument) |
+| `orWhere($column, $value)` | OR where clause (`$operator` optional as second argument) |
 | `whereIn($column, $values)` | WHERE IN clause |
+| `whereLike($column, $value)` | WHERE LIKE clause |
+| `orWhereLike($column, $value)` | OR WHERE LIKE clause |
 | `whereNull($column)` | WHERE IS NULL |
 | `whereNotNull($column)` | WHERE IS NOT NULL |
 | `orderBy($column, $direction)` | ORDER BY clause |
