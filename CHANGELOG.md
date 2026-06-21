@@ -2,6 +2,11 @@
 
 All notable changes to `Ezekiel` will be documented in this file.
 
+## 0.1.2 - 2026-06-21
+
+### Fixed
+- `$first` guard in `Builder`
+
 ## 0.1.1 - 2026-06-21
 
 ### Added

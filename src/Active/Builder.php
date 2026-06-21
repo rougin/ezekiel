@@ -83,7 +83,7 @@ class Builder
             /** @var mixed */
             $value = $where['value'];
 
-            if ($type === 'OR')
+            if ($type === 'OR' && ! $first)
             {
                 $compare = $query->orWhere($col);
             }
