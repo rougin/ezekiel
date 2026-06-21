@@ -305,6 +305,43 @@ class Compare implements QueryInterface, ValueInterface
     }
 
     /**
+     * Parses a comparison operator and dispatches to the appropriate method.
+     *
+     * @param string $operator
+     * @param mixed  $value
+     *
+     * @return \Rougin\Ezekiel\Query
+     */
+    public function parse($operator, $value)
+    {
+        switch ($operator)
+        {
+            case '=':
+                return $this->equals($value);
+            case '!=':
+                return $this->notEqualTo($value);
+            case '>':
+                return $this->greaterThan($value);
+            case '<':
+                return $this->lessThan($value);
+            case '>=':
+                return $this->greaterThanOrEqualTo($value);
+            case '<=':
+                return $this->lessThanOrEqualTo($value);
+            case 'like':
+            case 'LIKE':
+                /** @var string $value */
+                return $this->like($value);
+            case 'in':
+            case 'IN':
+                /** @var mixed[] $value */
+                return $this->in($value);
+            default:
+                return $this->equals($value);
+        }
+    }
+
+    /**
      * @return string
      */
     public function toSql()

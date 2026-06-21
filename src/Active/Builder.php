@@ -58,7 +58,7 @@ class Builder
      *
      * @return void
      */
-    public function filter($query)
+    public function filter(Query $query)
     {
         $first = true;
 
@@ -74,18 +74,6 @@ class Builder
             /** @var string */
             $type = $where['type'];
 
-            $method = 'where';
-
-            if (! $first)
-            {
-                $method = 'and_where';
-            }
-
-            if ($type === 'OR')
-            {
-                $method = 'or_where';
-            }
-
             /** @var string */
             $col = $where['column'];
 
@@ -95,49 +83,20 @@ class Builder
             /** @var mixed */
             $value = $where['value'];
 
-            switch ($comparison)
+            if ($type === 'OR')
             {
-                case '=':
-                    $query->$method($col)->equals($value);
-
-                    break;
-                case 'like':
-                case 'LIKE':
-                    /** @var string $value */
-                    $query->$method($col)->like($value);
-
-                    break;
-                case 'in':
-                case 'IN':
-                    /** @var mixed[] $value */
-                    $query->$method($col)->in($value);
-
-                    break;
-                case '!=':
-                    $query->$method($col)->notEqualTo($value);
-
-                    break;
-                case '>':
-                    $query->$method($col)->greaterThan($value);
-
-                    break;
-                case '<':
-                    $query->$method($col)->lessThan($value);
-
-                    break;
-                case '>=':
-                    $query->$method($col)->greaterThanOrEqualTo($value);
-
-                    break;
-                case '<=':
-                    $query->$method($col)->lessThanOrEqualTo($value);
-
-                    break;
-                default:
-                    $query->$method($col)->equals($value);
-
-                    break;
+                $compare = $query->orWhere($col);
             }
+            elseif (! $first)
+            {
+                $compare = $query->andWhere($col);
+            }
+            else
+            {
+                $compare = $query->where($col);
+            }
+
+            $compare->parse($comparison, $value);
 
             $first = false;
         }
