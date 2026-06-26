@@ -5,8 +5,9 @@ All notable changes to `Ezekiel` will be documented in this file.
 ## 0.1.3 - 2026-06-26
 
 ### Added
-- `whereNull`, `whereNotNull` in `Builder`, `Model`
-- `trashed`, `restore`, `forceDelete` in `Model`
+- `__toString` in `Query`, `Table`
+- `forceDelete`, `trashed`, `restore` in `Model`
+- `whereNull`, `whereNotNull` in `Model`
 
 ### Changed
 - Improved documentation

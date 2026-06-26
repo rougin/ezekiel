@@ -553,6 +553,14 @@ class Query
     }
 
     /**
+     * @return string
+     */
+    public function __toString()
+    {
+        return $this->toSql();
+    }
+
+    /**
      * Returns the safe and compiled SQL.
      *
      * @return string

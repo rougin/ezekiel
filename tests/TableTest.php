@@ -132,6 +132,68 @@ class TableTest extends Testcase
     /**
      * @return void
      */
+    public function test_passed_if_pgsql_alters_add_column()
+    {
+        $expect = 'ALTER TABLE "users" ADD COLUMN "bio" TEXT NOT NULL';
+
+        $table = new Table(new PgsqlDialect);
+
+        $table->table('users', function (Design $d)
+        {
+            $d->text('bio');
+        });
+
+        $actual = $table->toSql();
+
+        $this->assertEquals($expect, $actual);
+    }
+
+    /**
+     * @return void
+     */
+    public function test_passed_if_pgsql_uses_boolean_type()
+    {
+        $sql = 'CREATE TABLE "users" (';
+        $sql .= '"id" SERIAL NOT NULL PRIMARY KEY, ';
+        $sql .= '"is_admin" BOOLEAN NOT NULL DEFAULT TRUE';
+        $sql .= ')';
+
+        $table = new Table(new PgsqlDialect);
+
+        $table->create('users', function (Design $d)
+        {
+            $d->increments('id');
+
+            $d->boolean('is_admin')->defaultValue(true);
+        });
+
+        $actual = $table->toSql();
+
+        $this->assertEquals($sql, $actual);
+    }
+
+    /**
+     * @return void
+     */
+    public function test_passed_if_sqlite_alters_add_column()
+    {
+        $expect = 'ALTER TABLE "users" ADD COLUMN "bio" TEXT NOT NULL';
+
+        $table = new Table(new SqliteDialect);
+
+        $table->table('users', function (Design $d)
+        {
+            $d->text('bio');
+        });
+
+        $actual = $table->toSql();
+
+        $this->assertEquals($expect, $actual);
+    }
+
+    /**
+     * @return void
+     */
     public function test_passed_if_table_alters()
     {
         $sql = 'ALTER TABLE `users` ADD `bio` TEXT NOT NULL';
@@ -335,83 +397,13 @@ class TableTest extends Testcase
     /**
      * @return void
      */
-    public function test_passed_if_table_uses_pgsql_dialect()
+    public function test_passed_if_table_to_string_equals_to_sql()
     {
-        $sql = 'CREATE TABLE "users" ("id" SERIAL NOT NULL PRIMARY KEY, ';
-        $sql .= '"name" VARCHAR(100) NOT NULL)';
+        $expect = 'DROP TABLE `users`';
 
-        $table = new Table(new PgsqlDialect);
+        $actual = new Table;
 
-        $table->create('users', function (Design $d)
-        {
-            $d->increments('id');
-
-            $d->string('name', 100);
-        });
-
-        $actual = $table->toSql();
-
-        $this->assertEquals($sql, $actual);
-    }
-
-    /**
-     * @return void
-     */
-    public function test_passed_if_pgsql_alters_add_column()
-    {
-        $expect = 'ALTER TABLE "users" ADD COLUMN "bio" TEXT NOT NULL';
-
-        $table = new Table(new PgsqlDialect);
-
-        $table->table('users', function (Design $d)
-        {
-            $d->text('bio');
-        });
-
-        $actual = $table->toSql();
-
-        $this->assertEquals($expect, $actual);
-    }
-
-    /**
-     * @return void
-     */
-    public function test_passed_if_pgsql_uses_boolean_type()
-    {
-        $sql = 'CREATE TABLE "users" (';
-        $sql .= '"id" SERIAL NOT NULL PRIMARY KEY, ';
-        $sql .= '"is_admin" BOOLEAN NOT NULL DEFAULT TRUE';
-        $sql .= ')';
-
-        $table = new Table(new PgsqlDialect);
-
-        $table->create('users', function (Design $d)
-        {
-            $d->increments('id');
-
-            $d->boolean('is_admin')->defaultValue(true);
-        });
-
-        $actual = $table->toSql();
-
-        $this->assertEquals($sql, $actual);
-    }
-
-    /**
-     * @return void
-     */
-    public function test_passed_if_sqlite_alters_add_column()
-    {
-        $expect = 'ALTER TABLE "users" ADD COLUMN "bio" TEXT NOT NULL';
-
-        $table = new Table(new SqliteDialect);
-
-        $table->table('users', function (Design $d)
-        {
-            $d->text('bio');
-        });
-
-        $actual = $table->toSql();
+        $actual->drop('users');
 
         $this->assertEquals($expect, $actual);
     }
@@ -433,6 +425,28 @@ class TableTest extends Testcase
             $d->increments('id');
 
             $d->boolean('is_active');
+        });
+
+        $actual = $table->toSql();
+
+        $this->assertEquals($sql, $actual);
+    }
+
+    /**
+     * @return void
+     */
+    public function test_passed_if_table_uses_pgsql_dialect()
+    {
+        $sql = 'CREATE TABLE "users" ("id" SERIAL NOT NULL PRIMARY KEY, ';
+        $sql .= '"name" VARCHAR(100) NOT NULL)';
+
+        $table = new Table(new PgsqlDialect);
+
+        $table->create('users', function (Design $d)
+        {
+            $d->increments('id');
+
+            $d->string('name', 100);
         });
 
         $actual = $table->toSql();

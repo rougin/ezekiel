@@ -125,6 +125,14 @@ class Table
     /**
      * @return string
      */
+    public function __toString()
+    {
+        return $this->toSql();
+    }
+
+    /**
+     * @return string
+     */
     public function toSql()
     {
         if ($this->type === self::TYPE_DROP)

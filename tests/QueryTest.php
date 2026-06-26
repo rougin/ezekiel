@@ -239,6 +239,22 @@ class QueryTest extends Testcase
     /**
      * @return void
      */
+    public function test_passed_if_to_string_equals_to_sql()
+    {
+        $expect = 'DELETE FROM `users` WHERE `name` = ? LIMIT 10, 0';
+
+        $actual = new Query;
+
+        $actual->deleteFrom('users')
+            ->where('name')->equals('Royce')
+            ->limit(10);
+
+        $this->assertEquals($expect, $actual);
+    }
+
+    /**
+     * @return void
+     */
     public function test_passed_if_update_has_limit()
     {
         $sql = 'UPDATE `users` SET `name` = ? WHERE `id` = ? LIMIT 5, 0';
