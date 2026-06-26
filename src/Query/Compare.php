@@ -336,6 +336,10 @@ class Compare implements QueryInterface, ValueInterface
             case 'IN':
                 /** @var mixed[] $value */
                 return $this->in($value);
+            case 'is_null':
+                return $this->isNull();
+            case 'is_not_null':
+                return $this->isNotNull();
             default:
                 return $this->equals($value);
         }

@@ -275,6 +275,11 @@ class Model
 
         $depot = $this->getDepot();
 
+        if ($this->softDeletes)
+        {
+            $this->attrs['deleted_at'] = date('Y-m-d H:i:s');
+        }
+
         return $depot->deleteRow($table, $key, $id, $this->softDeletes);
     }
 
@@ -284,6 +289,58 @@ class Model
     public function exists()
     {
         return $this->count() > 0;
+    }
+
+    /**
+     * Permanently removes the row.
+     *
+     * @return boolean
+     */
+    public function forceDelete()
+    {
+        $key = $this->primaryKey;
+
+        $id = $this->attrs[$key];
+
+        $table = $this->getTable();
+
+        $depot = $this->getDepot();
+
+        return $depot->deleteRow($table, $key, $id, false);
+    }
+
+    /**
+     * Restores a soft-deleted model.
+     *
+     * @return boolean
+     */
+    public function restore()
+    {
+        $table = $this->getTable();
+
+        $pk = $this->primaryKey;
+
+        $id = $this->attrs[$pk];
+
+        $data = array('deleted_at' => null);
+
+        $depot = $this->getDepot();
+
+        $result = $depot->updateRow($table, $pk, $id, $data);
+
+        $this->attrs['deleted_at'] = null;
+
+        return $result;
+    }
+
+    /**
+     * Returns true if the model is soft-deleted.
+     *
+     * @return boolean
+     */
+    public function trashed()
+    {
+        return array_key_exists('deleted_at', $this->attrs) && $this->attrs['deleted_at'] !== null;
     }
 
     /**
@@ -517,6 +574,30 @@ class Model
 
     /**
      * @param string $column
+     *
+     * @return static
+     */
+    public function orWhereNotNull($column)
+    {
+        $this->getBuilder()->orWhereNotNull($column);
+
+        return $this;
+    }
+
+    /**
+     * @param string $column
+     *
+     * @return static
+     */
+    public function orWhereNull($column)
+    {
+        $this->getBuilder()->orWhereNull($column);
+
+        return $this;
+    }
+
+    /**
+     * @param string $column
      * @param mixed  $value
      *
      * @return static
@@ -636,6 +717,30 @@ class Model
     public function whereIn($column, $values)
     {
         $this->getBuilder()->whereIn($column, $values);
+
+        return $this;
+    }
+
+    /**
+     * @param string $column
+     *
+     * @return static
+     */
+    public function whereNotNull($column)
+    {
+        $this->getBuilder()->whereNotNull($column);
+
+        return $this;
+    }
+
+    /**
+     * @param string $column
+     *
+     * @return static
+     */
+    public function whereNull($column)
+    {
+        $this->getBuilder()->whereNull($column);
 
         return $this;
     }

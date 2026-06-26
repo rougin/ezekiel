@@ -723,6 +723,158 @@ class ModelTest extends Testcase
     /**
      * @return void
      */
+    public function test_passed_if_force_delete_works()
+    {
+        $model = new SoftDeleteUser;
+
+        $model->name = 'ForceDel';
+
+        $model->save();
+
+        $id = $model->id;
+
+        $model->forceDelete();
+
+        $query = new SoftDeleteUser;
+
+        $found = $query->find($id);
+
+        $this->assertNull($found);
+    }
+
+    /**
+     * @return void
+     */
+    public function test_passed_if_model_is_restored()
+    {
+        $model = new SoftDeleteUser;
+
+        $model->name = 'RestoreMe';
+
+        $model->save();
+
+        $id = $model->id;
+
+        $model->delete();
+
+        $model->restore();
+
+        $this->assertNull($model->deleted_at);
+
+        $query = new SoftDeleteUser;
+
+        $found = $query->find($id);
+
+        $this->assertNotNull($found);
+
+        $this->assertEquals('RestoreMe', $found->name);
+    }
+
+    /**
+     * @return void
+     */
+    public function test_passed_if_model_is_trashed()
+    {
+        $model = new SoftDeleteUser;
+
+        $model->name = 'TrashedTest';
+
+        $model->save();
+
+        $this->assertFalse($model->trashed());
+
+        $model->delete();
+
+        $this->assertTrue($model->trashed());
+    }
+
+    /**
+     * @return void
+     */
+    public function test_passed_if_or_where_not_null()
+    {
+        $model = new User;
+
+        $model->name = 'HasAge';
+
+        $model->age = 25;
+
+        $model->save();
+
+        $query = new User;
+
+        $results = $query->where('name', '')->orWhereNotNull('age')->get();
+
+        $this->assertCount(1, $results);
+
+        $this->assertEquals('HasAge', $results[0]->name);
+    }
+
+    /**
+     * @return void
+     */
+    public function test_passed_if_or_where_null()
+    {
+        $model = new User;
+
+        $model->name = 'NoAge';
+
+        $model->save();
+
+        $query = new User;
+
+        $results = $query->where('id', 0)->orWhereNull('age')->get();
+
+        $this->assertCount(1, $results);
+
+        $this->assertEquals('NoAge', $results[0]->name);
+    }
+
+    /**
+     * @return void
+     */
+    public function test_passed_if_where_not_null()
+    {
+        $model = new User;
+
+        $model->name = 'WithAge';
+
+        $model->age = 30;
+
+        $model->save();
+
+        $query = new User;
+
+        $results = $query->whereNotNull('age')->get();
+
+        $this->assertCount(1, $results);
+
+        $this->assertEquals('WithAge', $results[0]->name);
+    }
+
+    /**
+     * @return void
+     */
+    public function test_passed_if_where_null()
+    {
+        $model = new User;
+
+        $model->name = 'NullAge';
+
+        $model->save();
+
+        $query = new User;
+
+        $results = $query->whereNull('age')->get();
+
+        $this->assertCount(1, $results);
+
+        $this->assertEquals('NullAge', $results[0]->name);
+    }
+
+    /**
+     * @return void
+     */
     public function test_passed_if_update_works()
     {
         $user = $this->createUser('UpdOld');

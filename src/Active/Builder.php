@@ -168,6 +168,40 @@ class Builder
 
     /**
      * @param string $column
+     *
+     * @return self
+     */
+    public function orWhereNotNull($column)
+    {
+        $this->wheres[] = array(
+            'type' => 'OR',
+            'column' => $column,
+            'comparison' => 'is_not_null',
+            'value' => null
+        );
+
+        return $this;
+    }
+
+    /**
+     * @param string $column
+     *
+     * @return self
+     */
+    public function orWhereNull($column)
+    {
+        $this->wheres[] = array(
+            'type' => 'OR',
+            'column' => $column,
+            'comparison' => 'is_null',
+            'value' => null
+        );
+
+        return $this;
+    }
+
+    /**
+     * @param string $column
      * @param mixed  $value
      *
      * @return self
@@ -293,6 +327,40 @@ class Builder
             'column' => $column,
             'comparison' => 'in',
             'value' => $values
+        );
+
+        return $this;
+    }
+
+    /**
+     * @param string $column
+     *
+     * @return self
+     */
+    public function whereNotNull($column)
+    {
+        $this->wheres[] = array(
+            'type' => 'AND',
+            'column' => $column,
+            'comparison' => 'is_not_null',
+            'value' => null
+        );
+
+        return $this;
+    }
+
+    /**
+     * @param string $column
+     *
+     * @return self
+     */
+    public function whereNull($column)
+    {
+        $this->wheres[] = array(
+            'type' => 'AND',
+            'column' => $column,
+            'comparison' => 'is_null',
+            'value' => null
         );
 
         return $this;

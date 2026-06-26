@@ -274,6 +274,8 @@ The `Builder` class wraps Ezekiel's `Query` and provides an Eloquent-compatible 
 | `orWhereLike($column, $value)` | OR WHERE LIKE clause |
 | `whereNull($column)` | WHERE IS NULL |
 | `whereNotNull($column)` | WHERE IS NOT NULL |
+| `orWhereNull($column)` | OR WHERE IS NULL |
+| `orWhereNotNull($column)` | OR WHERE IS NOT NULL |
 | `orderBy($column, $direction)` | ORDER BY clause |
 | `limit($value)` | LIMIT clause |
 | `offset($value)` | OFFSET clause |
@@ -285,7 +287,12 @@ The `Builder` class wraps Ezekiel's `Query` and provides an Eloquent-compatible 
 | `first($columns)` | Return first model or null |
 | `find($id, $columns)` | Find by primary key |
 | `findOrFail($id, $columns)` | Find or throw RuntimeException |
+| `firstOrFail()` | First model or throw |
 | `count()` | Return row count |
+| `all()` | Alias for `get()` |
+| `exists()` | Returns `true` if query matches |
+| `save()` | Insert or update model |
+| `toArray()` | Returns attributes as array |
 | `create($attrs)` | Insert and return model |
 | `update($values)` | Bulk update matching rows |
 | `delete()` | Delete matching rows |
@@ -349,9 +356,6 @@ class User extends Model
      */
     protected $guarded = array('password', 'is_admin');
 }
-
-// Bypass protection
-$user->forceFill(array('is_admin' => true));
 ```
 
 ### Timestamps
@@ -453,6 +457,16 @@ $post->tags()->attach($tagId, array('extra' => 'value'));
 $post->tags()->detach($tagId);
 ```
 
+Pivot table timestamps can be enabled with `withTimestamps`:
+
+```php
+public function tags()
+{
+    return $this->belongsToMany(Tag::class, 'post_tag', 'post_id', 'tag_id')
+        ->withTimestamps();
+}
+```
+
 ### Table name derivation
 
 When `$table` is not set, the table name is derived from the class name by converting `PascalCase` to `snake_case` and pluralising:
@@ -472,6 +486,39 @@ class User extends Model
      */
     protected $table = 'app_users';
 }          
+```
+
+### Model metadata
+
+The following methods provide introspective access to a model's configuration:
+
+```php
+$user = new User;
+
+$table = $user->getTable(); // 'users'
+
+$pk = $user->getPrimaryKey(); // 'id'
+
+$fk = $user->getForeignKey(); // 'user_id'
+
+$pdo = $user->getPdo(); // \PDO instance
+
+$conn = $user->getConnectionName(); // 'default'
+```
+
+`joiningTable($class)` computes the alphabetical pivot table name from two model tables:
+
+```php
+$user = new User;
+
+// 'roles_users'
+$table = $user->joiningTable(Role::class);
+```
+
+The static method `Model::setPdo($name, $pdo)` registers a named `\PDO` connection for all models sharing that connection name:
+
+```php
+User::setPdo('default', $pdo);
 ```
 
 ## Available methods
@@ -588,6 +635,39 @@ $sql = $query->toSql();
 
 // array('age' => array(6, 7))
 $binds = $query->getBinds();
+```
+
+`INNER JOIN` and `RIGHT JOIN` are also available alongside the `LEFT JOIN` shown in basic usage:
+
+``` php
+// SELECT * FROM users u INNER JOIN profiles p ON p.user_id = u.id
+$query = (new Query)
+    ->select('*')->from('users u')
+    ->innerJoin('profiles p')->on('p.user_id', 'u.id');
+
+// SELECT * FROM users u RIGHT JOIN orders o ON o.user_id = u.id
+$query = (new Query)
+    ->select('*')->from('users u')
+    ->rightJoin('orders o')->on('o.user_id', 'u.id');
+```
+
+For wrapping grouped conditions with explicit `AND`/`OR` connectors, use `andWhereGroup` and `orWhereGroup`:
+
+``` php
+$fn = function (Query $q)
+{
+    $q->where('age')->greaterThan(18)
+        ->orWhere('role')->equals('admin');
+};
+
+$query = (new Query)
+    ->select('*')->from('users')
+    ->where('status')->equals(1)
+    ->andWhereGroup($fn);
+
+// SELECT * FROM users
+// WHERE status = ? AND (age > ? OR role = ?)
+$sql = $query->toSql();
 ```
 
 ### UPDATE
@@ -747,6 +827,31 @@ $table->dropIfExists('users');
 // DROP TABLE IF EXISTS `users`
 ```
 
+### Alter table
+
+Use the `table` method to add columns to an existing table:
+
+``` php
+$table = new Table;
+
+$fn = function (Design $d)
+{
+    $d->string('phone', 20)->nullable();
+
+    $d->text('notes')->nullable();
+
+    $d->softDeletes();
+};
+
+$table->table('users', $fn);
+
+// ALTER TABLE `users`
+// ADD `phone` VARCHAR(20),
+// ADD `notes` TEXT,
+// ADD `deleted_at` TIMESTAMP
+$sql = $table->toSql();
+```
+
 ## Snake case
 
 All methods can be called in either `camelCase` or `snake_case`:
@@ -813,6 +918,17 @@ class OracleDialect extends AbstractDialect
 ```
 
 Custom dialects can also override `toColumn`, `toAlterTable`, `toCreateTable`, `toDropTable`, and `toDropTableIfExists` for generating platform-specific DDL statements (e.g., type translation, `ADD` vs `ADD COLUMN`, `AUTO_INCREMENT` vs `IDENTITY(1,1)`).
+
+To auto-detect a dialect from a `\PDO` connection, use the static factory:
+
+``` php
+use Rougin\Ezekiel\Dialect;
+
+$pdo = new \PDO('sqlite::memory:');
+
+// Returns a SqliteDialect instance
+$dialect = Dialect::fromPdo($pdo);
+```
 
 > [!NOTE]
 > Available built-in dialects for `Ezekiel` include `MysqlDialect`, `PgsqlDialect`, `SqliteDialect`, and `MssqlDialect`.
